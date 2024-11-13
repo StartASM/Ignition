@@ -18,7 +18,7 @@ def save_config(config):
         json.dump(config, f, indent=4)
 
 
-def validate_binary_path(path):
+def validate_path(path):
     """Check if the provided binary path is valid."""
     return os.path.isfile(path) and os.access(path, os.X_OK)
 
@@ -28,13 +28,13 @@ def ensure_binary_path():
     config = get_config()
     binary_path = config.get("binary_path")
 
-    if binary_path and validate_binary_path(binary_path):
+    if binary_path and validate_path(binary_path):
         return binary_path  #Binary path already set and valid
 
     print("No valid binary path found.")
     while True:
         binary_path = input("Please enter the full path to your C++ binary: ").strip()
-        if validate_binary_path(binary_path):
+        if validate_path(binary_path):
             config["binary_path"] = binary_path
             save_config(config)
             print(f"Binary path saved: {binary_path}")
