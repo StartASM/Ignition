@@ -20,7 +20,7 @@ def save_config(config):
 
 def validate_path(path):
     """Check if the provided binary path is valid."""
-    return os.path.isfile(path) and os.access(path, os.X_OK)
+    return os.path.isdir(path)
 
 
 def ensure_binary_path():
@@ -33,7 +33,7 @@ def ensure_binary_path():
 
     print("No valid binary path found.")
     while True:
-        binary_path = input("Please enter the full path to your C++ binary: ").strip()
+        binary_path = input("Please enter the full path to your local StartASM Compiler directory: ").strip()
         if validate_path(binary_path):
             config["binary_path"] = binary_path
             save_config(config)
