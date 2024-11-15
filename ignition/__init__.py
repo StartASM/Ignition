@@ -1,5 +1,6 @@
 import os
 import json
+import subprocess
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
 
@@ -18,30 +19,43 @@ def save_config(config):
         json.dump(config, f, indent=4)
 
 
-def validate_path(path):
-    """Check if the provided binary path is valid."""
-    return os.path.isdir(path)
+def validate_docker_image(image_name):
+    """Check if the provided Docker image exists locally."""
+    try:
+        result = subprocess.run(
+            ["docker", "images", "-q", image_name],
+            text=True,
+            capture_output=True,
+            check=True
+        )
+        return bool(result.stdout.strip())
+    except FileNotFoundError:
+        print("Docker is not installed or not in PATH.")
+        return False
+    except subprocess.CalledProcessError as e:
+        print(f"Error checking Docker images: {e}")
+        return False
 
 
-def ensure_binary_path():
-    """Ensure a valid binary path is set in the config."""
+def ensure_docker_image():
+    """Ensure a valid Docker image is set in the config."""
     config = get_config()
-    binary_path = config.get("binary_path")
+    docker_image = config.get("docker_image")
 
-    if binary_path and validate_path(binary_path):
-        return binary_path  #Binary path already set and valid
+    if docker_image and validate_docker_image(docker_image):
+        return docker_image  # Docker image already set and valid
 
-    print("No valid binary path found.")
+    print("No valid Docker image found.")
     while True:
-        binary_path = input("Please enter the full path to your local StartASM Compiler directory: ").strip()
-        if validate_path(binary_path):
-            config["binary_path"] = binary_path
+        docker_image = input("Please enter the full name of your StartASM Docker Image: ").strip()
+        if validate_docker_image(docker_image):
+            config["docker_image"] = docker_image
             save_config(config)
-            print(f"Binary path saved: {binary_path}")
-            return binary_path
+            print(f"Docker image saved: {docker_image}")
+            return docker_image
         else:
-            print("Invalid path. Ensure the file exists and is executable.")
+            print("Invalid Docker image. Ensure the image exists locally and try again.")
 
 
-#Ensure binary path is set at the first import
-ensure_binary_path()
+# Ensure Docker image is set at the first import
+ensure_docker_image()

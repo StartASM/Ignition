@@ -1,7 +1,7 @@
 import argparse
 import json
 import os
-from ignition import ensure_binary_path
+from ignition import ensure_docker_image
 from ignition.interpreter import Interpreter
 
 # Path to the configuration file
@@ -44,7 +44,7 @@ def suppress_output(silent_flags):
     return silent_flags.get("truesilent", False)
 
 
-def process_command(state, args, silent_flags):
+def process_command(state, args, silent_flags, interpreter):
     if suppress_output(silent_flags):
         return state
 
@@ -60,13 +60,24 @@ def process_command(state, args, silent_flags):
                 print("Error: The 'initialize' operation requires a .sasm program file path (use --file).")
             return state
 
-        state.update({
-            "initialized": True,
-            "last_operation": "initialize",
-            "finished_last": False,
-            "current_file": args.file,
-        })
-        print(f"Initialized program '{args.file}'.")
+        success = interpreter.initialize(args.file)  # Call interpreter.initialize
+        if success:
+            state.update({
+                "initialized": True,
+                "last_operation": "initialize",
+                "finished_last": False,
+                "current_file": args.file,
+            })
+            print(f"Initialized program '{args.file}'.")
+        else:
+            print(f"Initialization failed for program '{args.file}'. Terminating.")
+            interpreter.terminate()  # Implicitly terminate
+            state.update({  # Update the state to reflect termination
+                "initialized": False,
+                "last_operation": "terminate",
+                "finished_last": False,
+                "current_file": None,
+            })
 
     elif operation in ["forward", "finish", "dump"]:
         if not state["initialized"]:
@@ -81,6 +92,7 @@ def process_command(state, args, silent_flags):
                 return state
             state["last_operation"] = "forward"
             print(f"Executing 'forward' on program '{state['current_file']}'.")
+            interpreter.forward()
 
         elif operation == "finish":
             if state["finished_last"]:
@@ -92,24 +104,14 @@ def process_command(state, args, silent_flags):
                 "finished_last": True,
             })
             print(f"Executing 'finish' on program '{state['current_file']}'.")
+            interpreter.finish()
 
         elif operation == "dump":
             if not any([args.r, args.m, args.l, args.s, args.f, args.p]):
                 print("Error: No attributes chosen to dump. Run '--help' for available flags.")
                 return state
             print(f"Dumping system state for program '{state['current_file']}':")
-            if args.r:
-                print("Registers: [example register data]")
-            if args.m:
-                print("Memory: [example memory data]")
-            if args.l:
-                print("Labels: [example label data]")
-            if args.s:
-                print("Stack: [example stack data]")
-            if args.f:
-                print("Flags: [example flags data]")
-            if args.p:
-                print("Program Data: [example program state]")
+            interpreter.dump()
 
     elif operation == "terminate":
         if not state["initialized"]:
@@ -125,11 +127,11 @@ def process_command(state, args, silent_flags):
             "current_file": None,
         })
         print("Ready to initialize a new .sasm program.")
+        interpreter.terminate()
 
     elif operation == "end":
         if state["initialized"]:
             print("Warning: Program is still initialized. Running 'terminate' before exiting.")
-            # Perform termination
             print(f"Terminated program '{state['current_file']}'")
             state.update({
                 "initialized": False,
@@ -137,6 +139,7 @@ def process_command(state, args, silent_flags):
                 "finished_last": False,
                 "current_file": None,
             })
+            interpreter.terminate()
             save_state(state)  # Save the state after terminating
 
         print("Exiting the interpreter.")
@@ -144,10 +147,9 @@ def process_command(state, args, silent_flags):
 
     return state
 
-
 def main():
-    # Get binary path (ensures it exists)
-    binary_path = ensure_binary_path()
+    # Get Docker image (ensures it exists)
+    compiler_image = ensure_docker_image()
 
     # Parse the initial command
     parser = argparse.ArgumentParser(description="Ignition: The StartASM interpreter and step-through debugger.")
@@ -162,6 +164,9 @@ def main():
     if args.command != "start":
         print("Error: You must provide the 'start' command to begin.")
         exit(1)
+
+    # Instantiate the Interpreter object
+    interpreter = Interpreter(compiler_image)
 
     # Load initial state
     state = load_state()
@@ -207,11 +212,7 @@ def main():
         }
 
         # Process the command
-        state = process_command(state, args, silent_flags)
+        state = process_command(state, args, silent_flags, interpreter)
 
         # Save state after every command
         save_state(state)
-
-
-if __name__ == "__main__":
-    main()
