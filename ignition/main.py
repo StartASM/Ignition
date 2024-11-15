@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 from ignition import ensure_binary_path
+from ignition.interpreter import Interpreter
 
 # Path to the configuration file
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
