@@ -16,9 +16,10 @@ class Runtime:
         self.memory = {}
         # Stack
         self.stack = []
-        # Counters (with state and iterations)
+        # Counters and pointers
+        self.s_pointer = None  # Stack Pointer
         self.p_counter = 0  # Program Counter
-        self.s_pointer = None # Stack Pointer
+        # Flags (State, Iteration)
         self.z_flag = [False,0]  # Zero Flag
         self.c_flag = [False,0]  # Carry Flag
         self.o_flag = [False,0]  # Overflow Flag
@@ -44,6 +45,30 @@ class Runtime:
             return None
         else:
             return self.memory[addr]
+
+    #STACK OPERATIONS
+    def push_stack(self, val, type):
+        self.stack.append([val, type])
+        self.s_pointer = self.stack[-1]
+    def pop_stack(self):
+        if self.stack:
+            ret = self.stack[-1]
+            self.stack.pop()
+            self.s_pointer = self.stack[-1]
+            return ret
+        else:
+            self.error = "Runtime Error: Stack is already empty"
+            return None
+    def get_stack_pointer(self):
+        return self.s_pointer
+
+    #PROGRAM COUNTER OPERATIONS
+    def increment_program_counter(self):
+        self.p_counter += 1
+    def set_program_counter(self, line):
+        self.p_counter = line
+    def get_program_counter(self):
+        return self.p_counter
 
     #FLAG OPERATIONS
     def set_flag(self, flag):
