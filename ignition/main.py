@@ -107,11 +107,11 @@ def process_command(state, args, silent_flags, interpreter):
             interpreter.finish()
 
         elif operation == "dump":
-            if not any([args.r, args.m, args.l, args.s, args.f, args.p]):
+            if not any([args.r, args.m, args.s, args.f, args.p]):
                 print("Error: No attributes chosen to dump. Run '--help' for available flags.")
                 return state
             print(f"Dumping system state for program '{state['current_file']}':")
-            interpreter.dump()
+            interpreter.dump(args.r, args.m, args.s, args.f, args.p)
 
     elif operation == "terminate":
         if not state["initialized"]:

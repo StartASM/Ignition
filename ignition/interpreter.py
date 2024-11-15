@@ -37,8 +37,17 @@ class Interpreter:
     def finish(self):
         print("Moving to EOF")
 
-    def dump(self):
-        print("Dumping state")
+    def dump(self, dump_reg, dump_mem, dump_stack, dump_flags, dump_prog):
+        if dump_reg:
+            print(self.runtime.dump_registers())
+        if dump_mem:
+            print(self.runtime.dump_memory())
+        if dump_stack:
+            print(self.runtime.dump_stack())
+        if dump_flags:
+            print(self.runtime.dump_flags())
+        if dump_prog:
+            print(self.runtime.dump_program_state())
 
     def terminate(self):
         #Clear the runtime and AST

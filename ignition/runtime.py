@@ -115,6 +115,36 @@ class Runtime:
                 self.s_flag = [False, 0]
             else:
                 self.s_flag[1] += 1
+    def clear_flags(self):
+        self.z_flag[0] = [False, 0]
+        self.c_flag[0] = [False, 0]
+        self.s_flag[0] = [False, 0]
+        self.o_flag[0] = [False, 0]
+
+    # DUMP OPERATIONS
+    def dump_registers(self):
+        reg_output = " ".join(f"{reg}:{val[0]}({val[1]})" for reg, val in self.registers.items())
+        return reg_output
+    def dump_memory(self):
+        mem_output = " ".join(f"{addr}:{val[0]}({val[1]})" for addr, val in sorted(self.memory.items()))
+        return mem_output
+    def dump_stack(self):
+        stack_output = " ".join(f"{val[0]}({val[1]})" for val in self.stack)
+        return stack_output
+    def dump_flags(self):
+        flag_output = f"zf:{int(self.z_flag[0])} "
+        flag_output += f"cf:{int(self.c_flag[0])} "
+        flag_output += f"sf:{int(self.s_flag[0])} "
+        flag_output += f"of:{int(self.o_flag[0])}"
+        return flag_output
+    def dump_program_state(self):
+        prog_state = f"pc:{self.p_counter} "
+        prog_state += f"sp:{self.s_pointer} "
+        prog_state += f"mem_size:{len(self.memory)*8}B "
+        prog_state += f"stack_size:{len(self.stack)*8}B"
+        return prog_state
+
+
 
 
 
