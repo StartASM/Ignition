@@ -111,7 +111,7 @@ def process_command(state, args, silent_flags, interpreter):
                 print("Error: No attributes chosen to dump. Run '--help' for available flags.")
                 return state
             print(f"Dumping system state for program '{state['current_file']}':")
-            interpreter.dump(args.r, args.m, args.s, args.f, args.p)
+            interpreter.dump(args.r, args.m, args.s, args.f, args.p, args.verbose)
 
     elif operation == "terminate":
         if not state["initialized"]:
@@ -185,6 +185,7 @@ def main():
         parser.add_argument("-s", action="store_true", help="Dump stack to console.")
         parser.add_argument("-f", action="store_true", help="Dump flags to console.")
         parser.add_argument("-p", action="store_true", help="Dump program data to console.")
+        parser.add_argument("--verbose", action="store_true", help="Provide verbose output for dump command.")  # Add verbose flag
         parser.add_argument("--silentc", action="store_true", help="Suppress compiler errors.")
         parser.add_argument("--silenti", action="store_true", help="Suppress interpreter module errors.")
         parser.add_argument("--silents", action="store_true", help="Suppress runtime errors.")

@@ -1,3 +1,5 @@
+from ignition.ast import OperandType
+
 class Runtime:
     def __init__(self):
         # Registers (Val, Type)
@@ -17,7 +19,7 @@ class Runtime:
         # Stack
         self.stack = []
         # Counters and pointers
-        self.s_pointer = None  # Stack Pointer
+        self.s_pointer = [None,None]  # Stack Pointer
         self.p_counter = 0  # Program Counter
         # Flags (State, Iteration)
         self.z_flag = [False,0]  # Zero Flag
@@ -26,7 +28,7 @@ class Runtime:
         self.s_flag = [False,0]  # Sign Flag
         self.error = ""
 
-    #REGISTER OPERATIONS
+    # REGISTER OPERATIONS
     def set_register(self, reg, val, type):
         self.registers[reg] = [val,type]
     def get_register(self, reg):
@@ -36,7 +38,7 @@ class Runtime:
         else:
             return self.registers[reg]
 
-    #MEMORY OPERATIONS
+    # MEMORY OPERATIONS
     def set_memory(self, addr, val, type):
         self.memory[addr] = [val, type]
     def get_memory(self, addr):
@@ -46,7 +48,7 @@ class Runtime:
         else:
             return self.memory[addr]
 
-    #STACK OPERATIONS
+    # STACK OPERATIONS
     def push_stack(self, val, type):
         self.stack.append([val, type])
         self.s_pointer = self.stack[-1]
@@ -62,7 +64,7 @@ class Runtime:
     def get_stack_pointer(self):
         return self.s_pointer
 
-    #PROGRAM COUNTER OPERATIONS
+    # PROGRAM COUNTER OPERATIONS
     def increment_program_counter(self):
         self.p_counter += 1
     def set_program_counter(self, line):
@@ -70,7 +72,7 @@ class Runtime:
     def get_program_counter(self):
         return self.p_counter
 
-    #FLAG OPERATIONS
+    # FLAG OPERATIONS
     def set_flag(self, flag):
         if flag == 'z':
             self.z_flag = [True, 0]
@@ -139,9 +141,9 @@ class Runtime:
         return flag_output
     def dump_program_state(self):
         prog_state = f"pc:{self.p_counter} "
-        prog_state += f"sp:{self.s_pointer} "
-        prog_state += f"mem_size:{len(self.memory)*8}B "
-        prog_state += f"stack_size:{len(self.stack)*8}B"
+        prog_state += f"sp:{self.s_pointer[0]}({self.s_pointer[1]}) "
+        prog_state += f"mem:{len(self.memory)*8}B "
+        prog_state += f"stack:{len(self.stack)*8}B"
         return prog_state
 
 

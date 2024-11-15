@@ -10,8 +10,9 @@ class Parser:
 
     def parse_program(self, program_path, compiler_image) -> AbstractSyntaxTree:
         self._call_compiler(program_path, compiler_image)
-        # Build the AbstractSyntaxTree and return it
         ast = AbstractSyntaxTree()
+        if self.json_output is None:
+            return None
         root_node = self._build_ast(self.json_output)
         ast.set_root(root_node)
         return ast
@@ -27,11 +28,12 @@ class Parser:
             )
             if result.returncode != 0:
                 print(f"Compiler error: {result.stderr.strip()}")
-                return None
-            self.json_output = json.loads(result.stdout)
+                self.json_output = None
+            else:
+                self.json_output = json.loads(result.stdout)
         except Exception as e:
             print(f"Failed to call compiler image: {str(e)}")
-            return None
+            self.json_output = None
 
     def _build_ast(self, json_node) -> RootNode:
         node_type = json_node.get("type")

@@ -37,17 +37,105 @@ class Interpreter:
     def finish(self):
         print("Moving to EOF")
 
-    def dump(self, dump_reg, dump_mem, dump_stack, dump_flags, dump_prog):
+    def dump(self, dump_reg, dump_mem, dump_stack, dump_flags, dump_prog, is_verbose):
+        def make_verbose(output, category):
+            if category == "registers":
+                verbose_output = []
+                for reg_entry in output.split():
+                    reg, value = reg_entry.split(":")
+                    val_0, val_1 = value.strip("()").split("(")
+                    verbose_output.append(f"Register {reg} -> Value: {val_0}, Type: {val_1}")
+                return "\n".join(verbose_output)
+
+            elif category == "memory":
+                verbose_output = []
+                for mem_entry in output.split():
+                    addr, value = mem_entry.split(":")
+                    val_0, val_1 = value.strip("()").split("(")
+                    verbose_output.append(f"Memory Address {addr} -> Value: {val_0}, Type: {val_1}")
+                return "\n".join(verbose_output)
+
+            elif category == "stack":
+                verbose_output = []
+                for stack_entry in output.split():
+                    val_0, val_1 = stack_entry.strip("()").split("(")
+                    verbose_output.append(f"Stack Entry -> Value: {val_0}, Type: {val_1}")
+                return "\n".join(verbose_output)
+
+            elif category == "flags":
+                verbose_output = []
+                # Map of flag acronyms to full names
+                flag_names = {
+                    "zf": "Zero Flag",
+                    "cf": "Carry Flag",
+                    "sf": "Sign Flag",
+                    "of": "Overflow Flag"
+                }
+                for flag_entry in output.split():
+                    flag, value = flag_entry.split(":")
+                    full_name = flag_names.get(flag, flag.upper())  # Default to uppercase acronym if not found
+                    verbose_output.append(f"{full_name} -> State: {value}")
+                return "\n".join(verbose_output)
+
+            elif category == "program":
+                verbose_output = []
+                for prog_entry in output.split():
+                    key, value = prog_entry.split(":")
+                    if key == "pc":
+                        verbose_output.append(f"Program Counter -> Line: {value}")
+                    elif key == "sp":
+                        val_0, val_1 = value.strip("()").split("(")
+                        verbose_output.append(f"Stack Pointer -> Value: {val_0}, Type: {val_1}")
+                    elif key == "mem_size":
+                        verbose_output.append(f"Memory Size -> {value[:(len(value)-1)]} Bytes")
+                    elif key == "stack_size":
+                        verbose_output.append(f"Stack Size (Bytes) -> {value[:(len(value)-1)]} Bytes")
+                return "\n".join(verbose_output)
+
         if dump_reg:
-            print(self.runtime.dump_registers())
+            reg_output = self.runtime.dump_registers()
+            if is_verbose:
+                print("=== Register Dump ===")
+                print(make_verbose(reg_output, "registers"))
+                print("=====================")
+            else:
+                print(reg_output)
+
         if dump_mem:
-            print(self.runtime.dump_memory())
+            mem_output = self.runtime.dump_memory()
+            if is_verbose:
+                print("=== Memory Dump ===")
+                print(make_verbose(mem_output, "memory"))
+                print("===================")
+            else:
+                print(mem_output)
+
         if dump_stack:
-            print(self.runtime.dump_stack())
+            stack_output = self.runtime.dump_stack()
+            if is_verbose:
+                print("=== Stack Dump ===")
+                print(make_verbose(stack_output, "stack"))
+                print("==================")
+            else:
+                print(stack_output)
+
         if dump_flags:
-            print(self.runtime.dump_flags())
+            flags_output = self.runtime.dump_flags()
+            if is_verbose:
+                print("=== Flags Dump ===")
+                print(make_verbose(flags_output, "flags"))
+                print("==================")
+            else:
+                print(flags_output)
+
         if dump_prog:
-            print(self.runtime.dump_program_state())
+            prog_output = self.runtime.dump_program_state()
+            if is_verbose:
+                print("=== Program State ===")
+                print(make_verbose(prog_output, "program"))
+                print("=====================")
+            else:
+                print(prog_output)
 
     def terminate(self):
         #Clear the runtime and AST
