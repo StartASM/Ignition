@@ -182,7 +182,6 @@ def main():
         )
         parser.add_argument("-r", action="store_true", help="Dump registers to console.")
         parser.add_argument("-m", action="store_true", help="Dump memory to console.")
-        parser.add_argument("-l", action="store_true", help="Dump labels to console.")
         parser.add_argument("-s", action="store_true", help="Dump stack to console.")
         parser.add_argument("-f", action="store_true", help="Dump flags to console.")
         parser.add_argument("-p", action="store_true", help="Dump program data to console.")
