@@ -16,7 +16,6 @@ DEFAULT_STATE = {
 
 
 def load_state():
-    """Load state from config.json, initializing it with default values if necessary."""
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r") as f:
@@ -36,24 +35,19 @@ def load_state():
 
 
 def save_state(state):
-    """Save state to config.json."""
     with open(CONFIG_FILE, "w") as f:
         json.dump(state, f, indent=4)
 
 
 def suppress_output(silent_flags):
-    """Suppress output based on silent flags."""
     return silent_flags.get("truesilent", False)
 
 
 def process_command(state, args, silent_flags):
-    """Process a single command based on the arguments."""
     if suppress_output(silent_flags):
         return state
 
     operation = args.operation
-
-    # Enforce operation order constraints
     if operation == "initialize":
         if state["initialized"]:
             if not silent_flags["silenti"]:
@@ -65,7 +59,6 @@ def process_command(state, args, silent_flags):
                 print("Error: The 'initialize' operation requires a .sasm program file path (use --file).")
             return state
 
-        # Reset state for a new initialization
         state.update({
             "initialized": True,
             "last_operation": "initialize",
