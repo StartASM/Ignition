@@ -71,6 +71,9 @@ class ASTNode:
     def get_children(self):
         return self.children
 
+    def child_at(self, pos):
+        return self.children[pos]
+
     def __repr__(self):
         """String representation for debugging."""
         return f"{self.__class__.__name__}(type={self.node_type}, value={self.value}, children={len(self.children)})"

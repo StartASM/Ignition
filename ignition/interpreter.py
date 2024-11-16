@@ -12,16 +12,17 @@ class Interpreter:
 
     def __init__(self, compiler_image):
         if not hasattr(self, "_initialized"):
-            #Core components (all singletons)
-            self.ast = None  #Abstract Syntax Tree
-            self.parser = Parser()  #Parser
-            self.runtime = None  #Runtime environment
-            self.error_string = ""  #Error messages
+            # Core components (all singletons)
+            self.ast = None  # Abstract Syntax Tree
+            self.parser = Parser()  # Parser
+            self.runtime = None  # Runtime environment
+            self.error_string = ""  # Error messages
             self.compiler_image = compiler_image
             self._initialized = True
+            self._EOF = False
+            self._prog_len = 0
 
     # PUBLIC METHODS
-
     def initialize(self, program):
         #Create a new blank runtime
         self.runtime = Runtime()
@@ -29,13 +30,17 @@ class Interpreter:
         self.ast = self.parser.parse_program(program, self.compiler_image)
         if self.ast is None:
             return False
+        self._prog_len = len(self.ast.root.get_children())-1
         return True
 
     def forward(self):
         print("Stepping forward")
+        self._execute_step()
 
     def finish(self):
         print("Moving to EOF")
+        while not self._EOF:
+            self._execute_step()
 
     def dump(self, dump_reg, dump_mem, dump_stack, dump_flags, dump_prog, is_verbose):
         def make_verbose(output, category):
@@ -141,6 +146,25 @@ class Interpreter:
         #Clear the runtime and AST
         self.runtime = None
         self.ast = None
+        self._EOF = False
+        self._prog_len = 0
 
     # PRIVATE METHODS
+    def _execute_step(self):
+        if self._EOF:
+            self.error_string += "Runtime Error: Already reached end of execution."
+        else:
+            curr_instruction = self.ast.root.child_at(self.runtime.get_program_counter())
+            print(f"Executing instruction {curr_instruction}")
+            self.runtime.increment_program_counter()
+
+        # Set EOF Var if reached EOF
+        if (self.runtime.get_program_counter() > self._prog_len):
+            self._EOF = True
+         #Error handling
+        if len(self.error_string)>0:
+            print(self.error_string)
+            self.error_string = ""
+
+
 
