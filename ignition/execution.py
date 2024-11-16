@@ -56,7 +56,14 @@ class ExecutionEngine:
 
     def _execute_store(self, operands):
         print("Executing store")
-        pass
+        source_reg = operands[0].value
+        target_mem = operands[1].value
+        source_val_type = self.runtime.get_register(source_reg)
+        if source_val_type is None:
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            self.runtime.set_memory(target_mem, source_val_type[0], source_val_type[1])
+            self.runtime.increment_program_counter()
 
     def _execute_create(self, operands):
         print("Executing create")
@@ -84,7 +91,7 @@ class ExecutionEngine:
             print(f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
             self.runtime.set_program_counter(self._prog_len)
         elif s1_val_type[1] not in permitted_types:
-            print(f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]}.")
+            print(f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} for addition.")
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] + s2_val_type[0]
@@ -93,15 +100,72 @@ class ExecutionEngine:
 
     def _execute_sub(self, operands):
         print("Executing sub")
-        pass
+        permitted_types = [OperandType.INTEGER, OperandType.FLOAT, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        source_reg_1 = operands[0].value
+        source_reg_2 = operands[1].value
+        dest_reg = operands[2].value
+        s1_val_type = self.runtime.get_register(source_reg_1)
+        s2_val_type = self.runtime.get_register(source_reg_2)
+        if s1_val_type is None or s2_val_type is None:
+            self.runtime.set_program_counter(self._prog_len)
+        elif s1_val_type[1] != s2_val_type[1]:
+            print(
+                f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
+            self.runtime.set_program_counter(self._prog_len)
+        elif s1_val_type[1] not in permitted_types:
+            print(
+                f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} are of different types for subtraction.")
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            result = s1_val_type[0] - s2_val_type[0]
+            self.runtime.set_register(dest_reg, result, s1_val_type[1])
+            self.runtime.increment_program_counter()
 
     def _execute_multiply(self, operands):
         print("Executing multiply")
-        pass
+        permitted_types = [OperandType.INTEGER, OperandType.FLOAT, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        source_reg_1 = operands[0].value
+        source_reg_2 = operands[1].value
+        dest_reg = operands[2].value
+        s1_val_type = self.runtime.get_register(source_reg_1)
+        s2_val_type = self.runtime.get_register(source_reg_2)
+        if s1_val_type is None or s2_val_type is None:
+            self.runtime.set_program_counter(self._prog_len)
+        elif s1_val_type[1] != s2_val_type[1]:
+            print(
+                f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
+            self.runtime.set_program_counter(self._prog_len)
+        elif s1_val_type[1] not in permitted_types:
+            print(
+                f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} are of different types for multiplication.")
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            result = s1_val_type[0] * s2_val_type[0]
+            self.runtime.set_register(dest_reg, result, s1_val_type[1])
+            self.runtime.increment_program_counter()
 
     def _execute_divide(self, operands):
         print("Executing divide")
-        pass
+        permitted_types = [OperandType.INTEGER, OperandType.FLOAT]
+        source_reg_1 = operands[0].value
+        source_reg_2 = operands[1].value
+        dest_reg = operands[2].value
+        s1_val_type = self.runtime.get_register(source_reg_1)
+        s2_val_type = self.runtime.get_register(source_reg_2)
+        if s1_val_type is None or s2_val_type is None:
+            self.runtime.set_program_counter(self._prog_len)
+        elif s1_val_type[1] != s2_val_type[1]:
+            print(
+                f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
+            self.runtime.set_program_counter(self._prog_len)
+        elif s1_val_type[1] not in permitted_types:
+            print(
+                f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} are of different types for division.")
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            result = s1_val_type[0] // s2_val_type[0]
+            self.runtime.set_register(dest_reg, result, s1_val_type[1])
+            self.runtime.increment_program_counter()
 
     def _execute_or(self, operands):
         print("Executing or")
