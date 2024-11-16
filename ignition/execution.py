@@ -226,15 +226,8 @@ class ExecutionEngine:
 
     def _execute_print(self, operands):
         print("Executing print")
-        pass
+        print(operands[0].value[2:(len(operands[0].value)-2)])
 
-    def _execute_label(self, operands):
-        print("Executing label")
-        pass
-
-    def _execute_comment(self, operands):
-        print("Executing comment")
-        pass
 
 
     # HELPER FUNCTIONS
@@ -251,7 +244,7 @@ class ExecutionEngine:
                 return True
             elif operand.value == 'false':
                 return False
-        elif operand.value == OperandType.CHARACTER or operand.value == OperandType.STRING:
+        elif op_type == OperandType.CHARACTER or op_type == OperandType.STRING:
             return str(operand.value)
         else:
             return None

@@ -105,7 +105,7 @@ def process_command(state, args, silent_flags, interpreter):
                     print(f"Error: '{state['current_file']}' is at end of execution. Run 'terminate' or 'restart' first to reset the program.")
                 return state
             state["last_operation"] = "forward"
-            print(f"Executing 'forward' on program '{state['current_file']}'.")
+            print(f"Running 'forward' on program '{state['current_file']}'.")
             interpreter.forward()
 
         elif operation == "finish":
@@ -117,7 +117,7 @@ def process_command(state, args, silent_flags, interpreter):
                 "last_operation": "finish",
                 "finished_last": True,  # Mark program as finished
             })
-            print(f"Executing 'finish' on program '{state['current_file']}'.")
+            print(f"Running 'finish' on program '{state['current_file']}'.")
             interpreter.finish()
 
         elif operation == "dump":
