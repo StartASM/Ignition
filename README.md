@@ -5,8 +5,9 @@ Ignition is StartASM's own interpreter and runtime virtual machine for code test
 
 ## Usage
 Before starting, make sure you have a local docker image of a StartASM compiler on your machine. Note the name given during the build phase - by default, it should be called `startasm` (If you followed the README installation guide).
-Then, while in the `Ignition` directory, run the following command to build the module locally:
+Then, while in the `Ignition` directory, run the following commands to build the module locally:
 ```
+pip install -r requirements.txt
 pip install .
 ```
 After that, Ignition should be ready to start. 
