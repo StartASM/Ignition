@@ -1,6 +1,7 @@
 from ignition.parser import Parser
 from ignition.runtime import Runtime
 from ignition.ast import AbstractSyntaxTree
+from ignition.execution import ExecutionEngine
 
 class Interpreter:
     _instance = None  #Singleton
@@ -12,16 +13,18 @@ class Interpreter:
 
     def __init__(self, compiler_image):
         if not hasattr(self, "_initialized"):
-            #Core components (all singletons)
-            self.ast = None  #Abstract Syntax Tree
-            self.parser = Parser()  #Parser
-            self.runtime = None  #Runtime environment
-            self.error_string = ""  #Error messages
-            self.compiler_image = compiler_image
-            self._initialized = True
+            # Core components (all singletons)
+            self.ast = None  # Abstract Syntax Tree
+            self.parser = Parser()  # Parser
+            self.runtime = None  # Runtime environment
+            self.execution_engine = None #Execution engine
+            self.error_string = ""  # Error messages
+            self.compiler_image = compiler_image # Compiler image
+            self._initialized = True # Whether the interpreter has been initialized (singleton)
+            self._EOF = False # Whether at EOF
+            self._prog_len = 0 # Length of current program
 
     # PUBLIC METHODS
-
     def initialize(self, program):
         #Create a new blank runtime
         self.runtime = Runtime()
@@ -29,13 +32,20 @@ class Interpreter:
         self.ast = self.parser.parse_program(program, self.compiler_image)
         if self.ast is None:
             return False
+        self._prog_len = len(self.ast.root.get_children())-1
+        # Create a new execution engine with the runtime instance
+        self.execution_engine = ExecutionEngine(self.runtime, self._prog_len)
         return True
 
     def forward(self):
-        print("Stepping forward")
+        self._execute_step()
 
     def finish(self):
-        print("Moving to EOF")
+        if self._EOF:
+            print("Error: 'examples/SimpleCode.sasm' is already at the end of execution. Run 'restart' to execute again.")
+        else:
+            while not self._EOF:
+                self._execute_step()
 
     def dump(self, dump_reg, dump_mem, dump_stack, dump_flags, dump_prog, is_verbose):
         def make_verbose(output, category):
@@ -67,7 +77,6 @@ class Interpreter:
                 # Map of flag acronyms to full names
                 flag_names = {
                     "zf": "Zero Flag",
-                    "cf": "Carry Flag",
                     "sf": "Sign Flag",
                     "of": "Overflow Flag"
                 }
@@ -140,7 +149,32 @@ class Interpreter:
     def terminate(self):
         #Clear the runtime and AST
         self.runtime = None
+        self.execution_engine = None
         self.ast = None
+        self._EOF = False
+        self._prog_len = 0
+
+    def restart(self):
+        self._EOF = False
+        self.runtime = Runtime()
+        self.execution_engine = ExecutionEngine(self.runtime, self._prog_len)
+        self.error_string = ""
 
     # PRIVATE METHODS
+    def _execute_step(self):
+        if self._EOF:
+            self.error_string += "Error: 'examples/SimpleCode.sasm' is already at the end of execution. Run 'restart' to execute again."
+        else:
+            curr_instruction = self.ast.root.child_at(self.runtime.get_program_counter())
+            self.execution_engine.execute(curr_instruction)
+
+        # Set EOF Var if reached EOF
+        if self.runtime.get_program_counter() > self._prog_len:
+            self._EOF = True
+         #Error handling
+        if len(self.error_string)>0:
+            print(self.error_string)
+            self.error_string = ""
+
+
 

@@ -79,6 +79,20 @@ def process_command(state, args, silent_flags, interpreter):
                 "current_file": None,
             })
 
+    elif operation == "restart":
+        if not state["initialized"]:
+            if not silent_flags["silenti"]:
+                print("Error: Cannot restart. No .sasm program has been initialized.")
+            return state
+
+        print(f"Restarting program '{state['current_file']}'.")
+        interpreter.restart()  # Call interpreter.restart
+        # Reset the state to allow further operations
+        state.update({
+            "last_operation": "restart",
+            "finished_last": False,  # Reset finished state lock
+        })
+
     elif operation in ["forward", "finish", "dump"]:
         if not state["initialized"]:
             if not silent_flags["silenti"]:
@@ -88,22 +102,22 @@ def process_command(state, args, silent_flags, interpreter):
         if operation == "forward":
             if state["finished_last"]:
                 if not silent_flags["silenti"]:
-                    print(f"Error: '{state['current_file']}' is at end of execution. Run 'terminate' first to release the current program.")
+                    print(f"Error: '{state['current_file']}' is at end of execution. Run 'terminate' or 'restart' first to reset the program.")
                 return state
             state["last_operation"] = "forward"
-            print(f"Executing 'forward' on program '{state['current_file']}'.")
+            print(f"Running 'forward' on program '{state['current_file']}'.")
             interpreter.forward()
 
         elif operation == "finish":
             if state["finished_last"]:
                 if not silent_flags["silenti"]:
-                    print(f"Error: '{state['current_file']}' is at end of execution. Run 'terminate' first to release the current program.")
+                    print(f"Error: '{state['current_file']}' is already at the end of execution. Run 'restart' to execute again.")
                 return state
             state.update({
                 "last_operation": "finish",
-                "finished_last": True,
+                "finished_last": True,  # Mark program as finished
             })
-            print(f"Executing 'finish' on program '{state['current_file']}'.")
+            print(f"Running 'finish' on program '{state['current_file']}'.")
             interpreter.finish()
 
         elif operation == "dump":
@@ -177,7 +191,7 @@ def main():
         parser = argparse.ArgumentParser(description="Enter a command for the interpreter.")
         parser.add_argument(
             "operation",
-            choices=["initialize", "forward", "finish", "terminate", "dump", "end"],
+            choices=["initialize", "restart", "forward", "finish", "terminate", "dump", "end"],
             help="The interpreter operation to perform."
         )
         parser.add_argument("-r", action="store_true", help="Dump registers to console.")
@@ -193,7 +207,7 @@ def main():
         parser.add_argument("--file", type=str, help="Path to the .sasm program file (used with 'initialize').")
 
         # Prompt user for input
-        user_input = input("Enter command: ").strip().split()
+        user_input = input("> ").strip().split()
         if not user_input:
             continue
 

@@ -1,6 +1,6 @@
 import subprocess
 import json
-from ignition.ast import AbstractSyntaxTree, RootNode, InstructionNode, OperandNode
+from ignition.ast import AbstractSyntaxTree, RootNode, InstructionNode, OperandNode, InstructionType, OperandType
 from ignition.ast import decode_operand_type, decode_instruction_type, NumOperands
 
 
@@ -39,13 +39,14 @@ class Parser:
         node_type = json_node.get("type")
         value = json_node.get("value", "")
         children = json_node.get("children", [])
-
+        ast_node = None
         if node_type == "ROOT":
             ast_node = RootNode()
         elif node_type == "INSTRUCTION":
             instruction_type = decode_instruction_type(json_node.get("instruction_type"))
             num_operands = NumOperands(json_node.get("num_operands"))
             line = json_node.get("line", -1)
+            print(instruction_type)
             ast_node = InstructionNode(
                 value=value,
                 instruction_type=instruction_type,
