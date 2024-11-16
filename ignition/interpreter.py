@@ -1,6 +1,7 @@
 from ignition.parser import Parser
 from ignition.runtime import Runtime
 from ignition.ast import AbstractSyntaxTree
+from ignition.execution import ExecutionEngine
 
 class Interpreter:
     _instance = None  #Singleton
@@ -16,16 +17,19 @@ class Interpreter:
             self.ast = None  # Abstract Syntax Tree
             self.parser = Parser()  # Parser
             self.runtime = None  # Runtime environment
+            self.execution_engine = None #Execution engine
             self.error_string = ""  # Error messages
-            self.compiler_image = compiler_image
-            self._initialized = True
-            self._EOF = False
-            self._prog_len = 0
+            self.compiler_image = compiler_image # Compiler image
+            self._initialized = True # Whether the interpreter has been initialized (singleton)
+            self._EOF = False # Whether at EOF
+            self._prog_len = 0 # Length of current program
 
     # PUBLIC METHODS
     def initialize(self, program):
         #Create a new blank runtime
         self.runtime = Runtime()
+        #Create a new execution engine with the runtime instance
+        self.execution_engine = ExecutionEngine(self.runtime)
         #Call the parser to parse the given program at the local path
         self.ast = self.parser.parse_program(program, self.compiler_image)
         if self.ast is None:
@@ -34,11 +38,9 @@ class Interpreter:
         return True
 
     def forward(self):
-        print("Stepping forward")
         self._execute_step()
 
     def finish(self):
-        print("Moving to EOF")
         while not self._EOF:
             self._execute_step()
 
@@ -145,6 +147,7 @@ class Interpreter:
     def terminate(self):
         #Clear the runtime and AST
         self.runtime = None
+        self.execution_engine = None
         self.ast = None
         self._EOF = False
         self._prog_len = 0
@@ -152,6 +155,7 @@ class Interpreter:
     def restart(self):
         self._EOF = False
         self.runtime = Runtime()
+        self.execution_engine = ExecutionEngine(self.runtime)
 
     # PRIVATE METHODS
     def _execute_step(self):
@@ -159,11 +163,11 @@ class Interpreter:
             self.error_string += "Runtime Error: Already reached end of execution."
         else:
             curr_instruction = self.ast.root.child_at(self.runtime.get_program_counter())
-            print(f"Executing instruction {curr_instruction}")
+            self.execution_engine.execute(curr_instruction)
             self.runtime.increment_program_counter()
 
         # Set EOF Var if reached EOF
-        if (self.runtime.get_program_counter() > self._prog_len):
+        if self.runtime.get_program_counter() > self._prog_len:
             self._EOF = True
          #Error handling
         if len(self.error_string)>0:

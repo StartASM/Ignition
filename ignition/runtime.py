@@ -146,6 +146,10 @@ class Runtime:
         prog_state += f"stack:{len(self.stack)*8}B"
         return prog_state
 
+    #ERROR HANDLING
+    def read_error(self):
+        return self.error
+
 
 
 
