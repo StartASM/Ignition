@@ -79,7 +79,7 @@ class ExecutionEngine:
 
     def _execute_add(self, operands):
         print("Executing add")
-        permitted_types = [OperandType.INTEGER, OperandType.FLOAT, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
         dest_reg = operands[2].value
@@ -100,7 +100,7 @@ class ExecutionEngine:
 
     def _execute_sub(self, operands):
         print("Executing sub")
-        permitted_types = [OperandType.INTEGER, OperandType.FLOAT, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
         dest_reg = operands[2].value
@@ -123,7 +123,7 @@ class ExecutionEngine:
 
     def _execute_multiply(self, operands):
         print("Executing multiply")
-        permitted_types = [OperandType.INTEGER, OperandType.FLOAT, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
         dest_reg = operands[2].value
@@ -146,7 +146,7 @@ class ExecutionEngine:
 
     def _execute_divide(self, operands):
         print("Executing divide")
-        permitted_types = [OperandType.INTEGER, OperandType.FLOAT]
+        permitted_types = [OperandType.INTEGER]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
         dest_reg = operands[2].value
@@ -215,26 +215,20 @@ class ExecutionEngine:
         print("Executing input")
         input_type = self._convert_type_enum(operands[0].value)
         input_dest = operands[1].value
-        user_input = input("stdin:> ")
+        user_input = input("stdin: ")
         if input_type == OperandType.INTEGER:
             try:
                 user_input = int(user_input)
                 self.runtime.set_register(input_dest, user_input, input_type)
             except ValueError:
                 print(f"Runtime Error: Invalid input {user_input} for type int")
-        elif input_type == OperandType.FLOAT:
-            try:
-                user_input = float(user_input)
-                self.runtime.set_register(input_dest, user_input, input_type)
-            except ValueError:
-                print(f"Runtime Error: Invalid input {user_input} for type float")
         elif input_type == OperandType.CHARACTER:
             self.runtime.set_register(input_dest, user_input, input_type)
         elif input_type == OperandType.BOOLEAN:
             valid_trues = ['true', '1', 'True', 't', 'TRUE', 'T']
             valid_falses = ['false', '0', 'False', 'f', 'FALSE', 'F']
             if user_input not in valid_trues or user_input not in valid_falses:
-                print(f"Runtime Error: Invalid input {user_input} for type float")
+                print(f"Runtime Error: Invalid input {user_input} for type bool")
             elif user_input in valid_trues:
                 self.runtime.set_register(input_dest, True, input_type)
             elif user_input in valid_falses:
@@ -249,7 +243,7 @@ class ExecutionEngine:
             print(f"Runtime Error: {source_reg} is not defined.")
             self.runtime.set_program_counter(self._prog_len)
         else:
-            print({source_val_type[0]})
+            print(f"stdout: {source_val_type[0]}")
             self.runtime.increment_program_counter()
 
     def _execute_print(self, operands):
@@ -272,8 +266,6 @@ class ExecutionEngine:
             return int(operand.value[2:len(operand.value) - 1])
         elif op_type == OperandType.INTEGER:
             return int(operand.value)
-        elif op_type == OperandType.FLOAT:
-            return float(operand.value)
         elif op_type == OperandType.BOOLEAN:
             if operand.value == 'true':
                 return True
@@ -287,8 +279,6 @@ class ExecutionEngine:
     def _convert_type_enum(self, str_type):
         if str_type == "integer":
             return OperandType.INTEGER
-        elif str_type == "float":
-            return OperandType.FLOAT
         elif str_type == "boolean":
             return OperandType.BOOLEAN
         elif str_type == "character":

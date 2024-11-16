@@ -22,10 +22,10 @@ class Runtime:
         self.s_pointer = [None,None]  # Stack Pointer
         self.p_counter = 0  # Program Counter
         # Flags (State, Iteration)
-        self.z_flag = [False,0]  # Zero Flag
-        self.c_flag = [False,0]  # Carry Flag
-        self.o_flag = [False,0]  # Overflow Flag
-        self.s_flag = [False,0]  # Sign Flag
+        self.z_flag = False  # Zero Flag
+        self.c_flag = False  # Carry Flag
+        self.o_flag = False  # Overflow Flag
+        self.s_flag = False  # Sign Flag
         self.error = ""
 
     # REGISTER OPERATIONS
@@ -73,55 +73,25 @@ class Runtime:
         return self.p_counter
 
     # FLAG OPERATIONS
-    def set_flag(self, flag):
+    def set_flag(self, flag, state):
         if flag == 'z':
-            self.z_flag = [True, 0]
+            self.z_flag = state
         elif flag == 'c':
-            self.c_flag = [True, 0]
+            self.c_flag = state
         elif flag =='o':
-            self.o_flag = [True, 0]
+            self.o_flag = state
         elif flag == 's':
-            self.s_flag = [True, 0]
-        else:
-            self.error = "Runtime Error: Undefined flag"
+            self.s_flag = state
+
     def get_flag(self, flag):
         if flag == 'z':
-            return self.z_flag[0]
+            return self.z_flag
         elif flag == 'c':
-            return self.c_flag[0]
+            return self.c_flag
         elif flag == 'o':
-            return self.o_flag[0]
+            return self.o_flag
         elif flag == 's':
-            return self.s_flag[0]
-        else:
-            self.error = "Runtime Error: Undefined flag"
-
-    def refresh_flags(self):
-        if not self.z_flag[0]:
-            if self.z_flag[1] > 1:
-                self.z_flag = [False, 0]
-            else:
-                self.z_flag[1] += 1
-        if not self.c_flag[0]:
-            if self.c_flag[1] > 1:
-                self.c_flag = [False, 0]
-            else:
-                self.c_flag[1] += 1
-        if not self.o_flag[0]:
-            if self.o_flag[1] > 1:
-                self.o_flag = [False, 0]
-            else:
-                self.o_flag[1] += 1
-        if not self.s_flag[0]:
-            if self.s_flag[1] > 1:
-                self.s_flag = [False, 0]
-            else:
-                self.s_flag[1] += 1
-    def clear_flags(self):
-        self.z_flag[0] = [False, 0]
-        self.c_flag[0] = [False, 0]
-        self.s_flag[0] = [False, 0]
-        self.o_flag[0] = [False, 0]
+            return self.s_flag
 
     # DUMP OPERATIONS
     def dump_registers(self):
@@ -134,10 +104,10 @@ class Runtime:
         stack_output = " ".join(f"{val[0]}({val[1]})" for val in self.stack)
         return stack_output
     def dump_flags(self):
-        flag_output = f"zf:{int(self.z_flag[0])} "
-        flag_output += f"cf:{int(self.c_flag[0])} "
-        flag_output += f"sf:{int(self.s_flag[0])} "
-        flag_output += f"of:{int(self.o_flag[0])}"
+        flag_output = f"zf:{int(self.z_flag)} "
+        flag_output += f"cf:{int(self.c_flag)} "
+        flag_output += f"sf:{int(self.s_flag)} "
+        flag_output += f"of:{int(self.o_flag)}"
         return flag_output
     def dump_program_state(self):
         prog_state = f"pc:{self.p_counter} "
