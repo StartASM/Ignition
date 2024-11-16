@@ -213,8 +213,33 @@ class ExecutionEngine:
 
     def _execute_input(self, operands):
         print("Executing input")
-        pass
-
+        input_type = self._convert_type_enum(operands[0].value)
+        input_dest = operands[1].value
+        user_input = input("stdin:> ")
+        if input_type == OperandType.INTEGER:
+            try:
+                user_input = int(user_input)
+                self.runtime.set_register(input_dest, user_input, input_type)
+            except ValueError:
+                print(f"Runtime Error: Invalid input {user_input} for type int")
+        elif input_type == OperandType.FLOAT:
+            try:
+                user_input = float(user_input)
+                self.runtime.set_register(input_dest, user_input, input_type)
+            except ValueError:
+                print(f"Runtime Error: Invalid input {user_input} for type float")
+        elif input_type == OperandType.CHARACTER:
+            self.runtime.set_register(input_dest, user_input, input_type)
+        elif input_type == OperandType.BOOLEAN:
+            valid_trues = ['true', '1', 'True', 't', 'TRUE', 'T']
+            valid_falses = ['false', '0', 'False', 'f', 'FALSE', 'F']
+            if user_input not in valid_trues or user_input not in valid_falses:
+                print(f"Runtime Error: Invalid input {user_input} for type float")
+            elif user_input in valid_trues:
+                self.runtime.set_register(input_dest, True, input_type)
+            elif user_input in valid_falses:
+                self.runtime.set_register(input_dest, False, input_type)
+        self.runtime.increment_program_counter()
 
     def _execute_output(self, operands):
         print("Executing output")
@@ -224,7 +249,7 @@ class ExecutionEngine:
             print(f"Runtime Error: {source_reg} is not defined.")
             self.runtime.set_program_counter(self._prog_len)
         else:
-            print(source_val_type[0])
+            print({source_val_type[0]})
             self.runtime.increment_program_counter()
 
     def _execute_print(self, operands):
