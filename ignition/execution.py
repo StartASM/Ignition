@@ -226,7 +226,11 @@ class ExecutionEngine:
 
     def _execute_print(self, operands):
         print("Executing print")
-        print(operands[0].value[2:(len(operands[0].value)-2)])
+        if operands[0].value == "newline":
+            print()
+        else:
+            print(operands[0].value[1:(len(operands[0].value)-1)], end="")
+        self.runtime.increment_program_counter()
 
 
 
