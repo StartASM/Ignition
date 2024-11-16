@@ -149,6 +149,10 @@ class Interpreter:
         self._EOF = False
         self._prog_len = 0
 
+    def restart(self):
+        self._EOF = False
+        self.runtime = Runtime()
+
     # PRIVATE METHODS
     def _execute_step(self):
         if self._EOF:
