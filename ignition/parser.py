@@ -1,6 +1,6 @@
 import subprocess
 import json
-from ignition.ast import AbstractSyntaxTree, RootNode, InstructionNode, OperandNode
+from ignition.ast import AbstractSyntaxTree, RootNode, InstructionNode, OperandNode, InstructionType, OperandType
 from ignition.ast import decode_operand_type, decode_instruction_type, NumOperands
 
 
@@ -39,19 +39,20 @@ class Parser:
         node_type = json_node.get("type")
         value = json_node.get("value", "")
         children = json_node.get("children", [])
-
+        ast_node = None
         if node_type == "ROOT":
             ast_node = RootNode()
         elif node_type == "INSTRUCTION":
             instruction_type = decode_instruction_type(json_node.get("instruction_type"))
             num_operands = NumOperands(json_node.get("num_operands"))
             line = json_node.get("line", -1)
-            ast_node = InstructionNode(
-                value=value,
-                instruction_type=instruction_type,
-                num_operands=num_operands,
-                line=line,
-            )
+            if instruction_type != InstructionType.COMMENT and instruction_type != InstructionType.LABEL:
+                ast_node = InstructionNode(
+                    value=value,
+                    instruction_type=instruction_type,
+                    num_operands=num_operands,
+                    line=line,
+                )
         elif node_type == "OPERAND":
             operand_type = decode_operand_type(json_node.get("operand_type"))
             line = json_node.get("line", -1)
@@ -68,6 +69,7 @@ class Parser:
         # Recursively process and add children
         for child_json in children:
             child_node = self._build_ast(child_json)
-            ast_node.add_child(child_node)
+            if ast_node is not None:
+                ast_node.add_child(child_node)
 
         return ast_node

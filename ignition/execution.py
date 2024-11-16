@@ -28,8 +28,6 @@ class ExecutionEngine:
             InstructionType.INPUT: self._execute_input,
             InstructionType.OUTPUT: self._execute_output,
             InstructionType.PRINT: self._execute_print,
-            InstructionType.LABEL: self._execute_label,
-            InstructionType.COMMENT: self._execute_comment,
         }
 
     def execute(self, instruction):
