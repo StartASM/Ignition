@@ -28,21 +28,24 @@ class Interpreter:
     def initialize(self, program):
         #Create a new blank runtime
         self.runtime = Runtime()
-        #Create a new execution engine with the runtime instance
-        self.execution_engine = ExecutionEngine(self.runtime)
         #Call the parser to parse the given program at the local path
         self.ast = self.parser.parse_program(program, self.compiler_image)
         if self.ast is None:
             return False
         self._prog_len = len(self.ast.root.get_children())-1
+        # Create a new execution engine with the runtime instance
+        self.execution_engine = ExecutionEngine(self.runtime, self._prog_len)
         return True
 
     def forward(self):
         self._execute_step()
 
     def finish(self):
-        while not self._EOF:
-            self._execute_step()
+        if self._EOF:
+            print("Error: 'examples/SimpleCode.sasm' is already at the end of execution. Run 'restart' to execute again.")
+        else:
+            while not self._EOF:
+                self._execute_step()
 
     def dump(self, dump_reg, dump_mem, dump_stack, dump_flags, dump_prog, is_verbose):
         def make_verbose(output, category):
@@ -155,16 +158,16 @@ class Interpreter:
     def restart(self):
         self._EOF = False
         self.runtime = Runtime()
-        self.execution_engine = ExecutionEngine(self.runtime)
+        self.execution_engine = ExecutionEngine(self.runtime, self._prog_len)
+        self.error_string = ""
 
     # PRIVATE METHODS
     def _execute_step(self):
         if self._EOF:
-            self.error_string += "Runtime Error: Already reached end of execution."
+            self.error_string += "Error: 'examples/SimpleCode.sasm' is already at the end of execution. Run 'restart' to execute again."
         else:
             curr_instruction = self.ast.root.child_at(self.runtime.get_program_counter())
             self.execution_engine.execute(curr_instruction)
-            self.runtime.increment_program_counter()
 
         # Set EOF Var if reached EOF
         if self.runtime.get_program_counter() > self._prog_len:

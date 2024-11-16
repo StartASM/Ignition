@@ -142,8 +142,8 @@ class Runtime:
     def dump_program_state(self):
         prog_state = f"pc:{self.p_counter} "
         prog_state += f"sp:{self.s_pointer[0]}({self.s_pointer[1]}) "
-        prog_state += f"mem:{len(self.memory)*8}B "
-        prog_state += f"stack:{len(self.stack)*8}B"
+        prog_state += f"mem:{len(self.memory)*4}B "
+        prog_state += f"stack:{len(self.stack)*4}B"
         return prog_state
 
     #ERROR HANDLING
