@@ -207,7 +207,7 @@ def main():
         parser.add_argument("--file", type=str, help="Path to the .sasm program file (used with 'initialize').")
 
         # Prompt user for input
-        user_input = input("Enter command: ").strip().split()
+        user_input = input("").strip().split()
         if not user_input:
             continue
 
