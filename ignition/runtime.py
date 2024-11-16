@@ -23,7 +23,6 @@ class Runtime:
         self.p_counter = 0  # Program Counter
         # Flags (State, Iteration)
         self.z_flag = False  # Zero Flag
-        self.c_flag = False  # Carry Flag
         self.o_flag = False  # Overflow Flag
         self.s_flag = False  # Sign Flag
         self.error = ""
@@ -42,11 +41,13 @@ class Runtime:
     def set_memory(self, addr, val, type):
         self.memory[addr] = [val, type]
     def get_memory(self, addr):
-        if addr not in self.memory:
+        if addr not in self.memory.keys():
             self.error = "Runtime Error: Non-initialized memory access at " + addr
             return None
         else:
             return self.memory[addr]
+    def addr_initialized(self, addr):
+        return addr in self.memory.keys()
 
     # STACK OPERATIONS
     def push_stack(self, val, type):
@@ -76,8 +77,6 @@ class Runtime:
     def set_flag(self, flag, state):
         if flag == 'z':
             self.z_flag = state
-        elif flag == 'c':
-            self.c_flag = state
         elif flag =='o':
             self.o_flag = state
         elif flag == 's':
@@ -86,8 +85,6 @@ class Runtime:
     def get_flag(self, flag):
         if flag == 'z':
             return self.z_flag
-        elif flag == 'c':
-            return self.c_flag
         elif flag == 'o':
             return self.o_flag
         elif flag == 's':
@@ -105,7 +102,6 @@ class Runtime:
         return stack_output
     def dump_flags(self):
         flag_output = f"zf:{int(self.z_flag)} "
-        flag_output += f"cf:{int(self.c_flag)} "
         flag_output += f"sf:{int(self.s_flag)} "
         flag_output += f"of:{int(self.o_flag)}"
         return flag_output

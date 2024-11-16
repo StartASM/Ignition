@@ -77,7 +77,6 @@ class Interpreter:
                 # Map of flag acronyms to full names
                 flag_names = {
                     "zf": "Zero Flag",
-                    "cf": "Carry Flag",
                     "sf": "Sign Flag",
                     "of": "Overflow Flag"
                 }

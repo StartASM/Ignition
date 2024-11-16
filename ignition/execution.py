@@ -1,5 +1,6 @@
 from ignition.ast import InstructionType, OperandType
-
+INT32_MIN = -2_147_483_648
+INT32_MAX = 2_147_483_647
 class ExecutionEngine:
     def __init__(self, runtime, prog_len):
         self.runtime = runtime
@@ -52,17 +53,30 @@ class ExecutionEngine:
 
     def _execute_load(self, operands):
         print("Executing load")
-        pass
+        source_reg = operands[0].value
+        target_reg = operands[1].value
+        source_val_type = self.runtime.get_register(source_reg)
+        if source_val_type[1] != OperandType.MEMORY_ADDRESS:
+            print(f"Runtime Error: Source register {target_reg[0]} does not contain a memory address.")
+        elif not self.runtime.addr_exists(source_val_type[0]):
+            print(f"Runtime Error: Memory address {source_val_type[0]} is not initialized.")
+        else:
+            mem_val_type = self.runtime.get_memory(source_val_type[0])
+            self.runtime.set_register(target_reg, mem_val_type[0], mem_val_type[1])
+            self.runtime.increment_program_counter()
 
     def _execute_store(self, operands):
         print("Executing store")
         source_reg = operands[0].value
-        target_mem = operands[1].value
+        target_reg = operands[1].value
         source_val_type = self.runtime.get_register(source_reg)
+        target_val_type = self.runtime.get_register(target_reg)
         if source_val_type is None:
             self.runtime.set_program_counter(self._prog_len)
+        elif target_val_type[1] != OperandType.MEMORY_ADDRESS:
+            print(f"Runtime Error: Target register {target_reg[0]} does not contain a memory address")
         else:
-            self.runtime.set_memory(target_mem, source_val_type[0], source_val_type[1])
+            self.runtime.set_memory(target_val_type[0], source_val_type[0], source_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_create(self, operands):
@@ -95,7 +109,7 @@ class ExecutionEngine:
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] + s2_val_type[0]
-            self.runtime.set_register(dest_reg, result, s1_val_type[1])
+            self.runtime.set_register(dest_reg, self._handle_overflow(int(result)), s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_sub(self, operands):
@@ -118,7 +132,7 @@ class ExecutionEngine:
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] - s2_val_type[0]
-            self.runtime.set_register(dest_reg, result, s1_val_type[1])
+            self.runtime.set_register(dest_reg, self._handle_overflow(int(result)), s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_multiply(self, operands):
@@ -141,7 +155,7 @@ class ExecutionEngine:
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] * s2_val_type[0]
-            self.runtime.set_register(dest_reg, result, s1_val_type[1])
+            self.runtime.set_register(dest_reg, self._handle_overflow(int(result)), s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_divide(self, operands):
@@ -164,7 +178,7 @@ class ExecutionEngine:
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] // s2_val_type[0]
-            self.runtime.set_register(dest_reg, result, s1_val_type[1])
+            self.runtime.set_register(dest_reg, self._handle_overflow(int(result)), s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_or(self, operands):
@@ -185,7 +199,25 @@ class ExecutionEngine:
 
     def _execute_compare(self, operands):
         print("Executing compare")
-        pass
+        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        source_reg_1 = operands[0].value
+        source_reg_2 = operands[1].value
+        s1_val_type = self.runtime.get_register(source_reg_1)
+        s2_val_type = self.runtime.get_register(source_reg_2)
+        if s1_val_type is None or s2_val_type is None:
+            self.runtime.set_program_counter(self._prog_len)
+        elif s1_val_type[1] != s2_val_type[1]:
+            print(
+                f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
+            self.runtime.set_program_counter(self._prog_len)
+        elif s1_val_type[1] not in permitted_types:
+            print(
+                f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} are of different types for subtraction.")
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            result = s1_val_type[0] - s2_val_type[0]
+            self._handle_overflow(int(result))
+            self.runtime.increment_program_counter()
 
     def _execute_jump(self, operands):
         print("Executing jump")
@@ -260,6 +292,24 @@ class ExecutionEngine:
 
 
     # HELPER FUNCTIONS
+    def _handle_overflow(self, result):
+        if result < INT32_MIN or result > INT32_MAX:
+            self.runtime.set_flag('o', True)
+        else:
+            self.runtime.set_flag('o', False)
+        wrapped_result = (result + 2**31) % 2**32 - 2**31
+        if wrapped_result == 0:
+            self.runtime.set_flag('z', True)
+            self.runtime.set_flag('s', False)
+        elif wrapped_result < 0:
+            self.runtime.set_flag('z', False)
+            self.runtime.set_flag('s', True)
+        else:
+            self.runtime.set_flag('z', False)
+            self.runtime.set_flag('s', False)
+        return wrapped_result
+
+
     def _convert_value(self, operand):
         op_type = operand.operand_type
         if op_type == OperandType.MEMORY_ADDRESS or op_type == OperandType.INSTRUCTION_ADDRESS:
