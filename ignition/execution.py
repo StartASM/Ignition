@@ -28,6 +28,8 @@ class ExecutionEngine:
             InstructionType.INPUT: self._execute_input,
             InstructionType.OUTPUT: self._execute_output,
             InstructionType.PRINT: self._execute_print,
+            InstructionType.LABEL: self._execute_pass,
+            InstructionType.COMMENT: self._execute_pass
         }
 
     def execute(self, instruction):
@@ -232,6 +234,9 @@ class ExecutionEngine:
             print(operands[0].value[1:(len(operands[0].value)-1)], end="")
         self.runtime.increment_program_counter()
 
+    def _execute_pass(self, operands):
+        print("Executing pass")
+        self.runtime.increment_program_counter()
 
 
     # HELPER FUNCTIONS

@@ -46,14 +46,13 @@ class Parser:
             instruction_type = decode_instruction_type(json_node.get("instruction_type"))
             num_operands = NumOperands(json_node.get("num_operands"))
             line = json_node.get("line", -1)
-            if instruction_type != InstructionType.COMMENT and instruction_type != InstructionType.LABEL:
-                print(instruction_type)
-                ast_node = InstructionNode(
-                    value=value,
-                    instruction_type=instruction_type,
-                    num_operands=num_operands,
-                    line=line,
-                )
+            print(instruction_type)
+            ast_node = InstructionNode(
+                value=value,
+                instruction_type=instruction_type,
+                num_operands=num_operands,
+                line=line,
+            )
         elif node_type == "OPERAND":
             operand_type = decode_operand_type(json_node.get("operand_type"))
             line = json_node.get("line", -1)
@@ -68,10 +67,8 @@ class Parser:
             raise ValueError(f"Unknown node type: {node_type}")
 
         # Recursively process and add children
-        if ast_node is not None:
-            for child_json in children:
-                child_node = self._build_ast(child_json)
-                if child_node is not None:
-                    ast_node.add_child(child_node)
+        for child_json in children:
+            child_node = self._build_ast(child_json)
+            ast_node.add_child(child_node)
 
         return ast_node
