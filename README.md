@@ -24,7 +24,7 @@ ignition start
 
 This will begin the interpreter loop, which the `--help` command can provide further usage information for. To terminate an ignition instance, simply run `end`.
 
-As of right now, Ignition has very little real functionality aside from is interface, but further implementation will be added gradually over time.
+As of right now, Ignition can interpret very basic StartASM programs, and more functionality will be added soon.
 
 ## License
 This project is licensed under the MIT license. Feel free to fork or contribute to this project or use it in any manner you like.
