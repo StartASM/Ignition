@@ -46,7 +46,6 @@ class Parser:
             instruction_type = decode_instruction_type(json_node.get("instruction_type"))
             num_operands = NumOperands(json_node.get("num_operands"))
             line = json_node.get("line", -1)
-            print(instruction_type)
             ast_node = InstructionNode(
                 value=value,
                 instruction_type=instruction_type,

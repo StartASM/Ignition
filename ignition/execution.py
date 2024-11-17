@@ -41,7 +41,6 @@ class ExecutionEngine:
 
     # Define the execute functions
     def _execute_move(self, operands):
-        print("Executing move")
         source_reg = operands[0].value
         target_reg = operands[1].value
         source_val_type = self.runtime.get_register(source_reg)
@@ -52,7 +51,6 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_load(self, operands):
-        print("Executing load")
         source_reg = operands[0].value
         target_reg = operands[1].value
         source_val_type = self.runtime.get_register(source_reg)
@@ -66,7 +64,6 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_store(self, operands):
-        print("Executing store")
         source_reg = operands[0].value
         target_reg = operands[1].value
         source_val_type = self.runtime.get_register(source_reg)
@@ -80,7 +77,6 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_create(self, operands):
-        print("Executing create")
         val_type = self._convert_type_enum(operands[0].value)
         val = self._convert_value(operands[1])
         reg = operands[2].value
@@ -88,11 +84,9 @@ class ExecutionEngine:
         self.runtime.increment_program_counter()
 
     def _execute_cast(self, operands):
-        print("Executing cast")
         pass
 
     def _execute_add(self, operands):
-        print("Executing add")
         permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
@@ -113,7 +107,6 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_sub(self, operands):
-        print("Executing sub")
         permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
@@ -136,7 +129,6 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_multiply(self, operands):
-        print("Executing multiply")
         permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
@@ -159,7 +151,6 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_divide(self, operands):
-        print("Executing divide")
         permitted_types = [OperandType.INTEGER]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
@@ -182,23 +173,18 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_or(self, operands):
-        print("Executing or")
         pass
 
     def _execute_and(self, operands):
-        print("Executing and")
         pass
 
     def _execute_not(self, operands):
-        print("Executing not")
         pass
 
     def _execute_shift(self, operands):
-        print("Executing shift")
         pass
 
     def _execute_compare(self, operands):
-        print("Executing compare")
         permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
@@ -220,31 +206,24 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_jump(self, operands):
-        print("Executing jump")
         pass
 
     def _execute_call(self, operands):
-        print("Executing call")
         pass
 
     def _execute_push(self, operands):
-        print("Executing push")
         pass
 
     def _execute_pop(self, operands):
-        print("Executing pop")
         pass
 
     def _execute_return(self, operands):
-        print("Executing return")
         pass
 
     def _execute_stop(self, operands):
-        print("Executing stop")
         self.runtime.set_program_counter(self._prog_len)
 
     def _execute_input(self, operands):
-        print("Executing input")
         input_type = self._convert_type_enum(operands[0].value)
         input_dest = operands[1].value
         user_input = input("stdin: ")
@@ -268,7 +247,6 @@ class ExecutionEngine:
         self.runtime.increment_program_counter()
 
     def _execute_output(self, operands):
-        print("Executing output")
         source_reg = operands[0].value
         source_val_type = self.runtime.get_register(source_reg)
         if source_val_type is None:
@@ -279,7 +257,6 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_print(self, operands):
-        print("Executing print")
         if operands[0].value == "newline":
             print()
         else:
@@ -287,7 +264,6 @@ class ExecutionEngine:
         self.runtime.increment_program_counter()
 
     def _execute_pass(self, operands):
-        print("Executing pass")
         self.runtime.increment_program_counter()
 
 

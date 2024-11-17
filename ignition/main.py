@@ -68,9 +68,8 @@ def process_command(state, args, silent_flags, interpreter):
                 "finished_last": False,
                 "current_file": args.file,
             })
-            print(f"Initialized program '{args.file}'.")
         else:
-            print(f"Initialization failed for program '{args.file}'. Terminating.")
+            print(f"Error: Initialization failed for program '{args.file}'. Terminating.")
             interpreter.terminate()  # Implicitly terminate
             state.update({  # Update the state to reflect termination
                 "initialized": False,
@@ -85,7 +84,6 @@ def process_command(state, args, silent_flags, interpreter):
                 print("Error: Cannot restart. No .sasm program has been initialized.")
             return state
 
-        print(f"Restarting program '{state['current_file']}'.")
         interpreter.restart()  # Call interpreter.restart
         # Reset the state to allow further operations
         state.update({
@@ -105,7 +103,6 @@ def process_command(state, args, silent_flags, interpreter):
                     print(f"Error: '{state['current_file']}' is at end of execution. Run 'terminate' or 'restart' first to reset the program.")
                 return state
             state["last_operation"] = "forward"
-            print(f"Running 'forward' on program '{state['current_file']}'.")
             interpreter.forward()
 
         elif operation == "finish":
@@ -117,7 +114,6 @@ def process_command(state, args, silent_flags, interpreter):
                 "last_operation": "finish",
                 "finished_last": True,  # Mark program as finished
             })
-            print(f"Running 'finish' on program '{state['current_file']}'.")
             interpreter.finish()
 
         elif operation == "dump":
@@ -133,20 +129,17 @@ def process_command(state, args, silent_flags, interpreter):
                 print("Error: Cannot terminate. No .sasm program has been initialized.")
             return state
 
-        print(f"Terminated program '{state['current_file']}'")
         state.update({
             "initialized": False,
             "last_operation": "terminate",
             "finished_last": False,
             "current_file": None,
         })
-        print("Ready to initialize a new .sasm program.")
         interpreter.terminate()
 
     elif operation == "end":
         if state["initialized"]:
             print("Warning: Program is still initialized. Running 'terminate' before exiting.")
-            print(f"Terminated program '{state['current_file']}'")
             state.update({
                 "initialized": False,
                 "last_operation": "terminate",
@@ -156,7 +149,6 @@ def process_command(state, args, silent_flags, interpreter):
             interpreter.terminate()
             save_state(state)  # Save the state after terminating
 
-        print("Exiting the interpreter.")
         exit(0)
 
     return state
