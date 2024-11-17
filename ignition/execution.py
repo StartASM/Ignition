@@ -237,8 +237,27 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_jump(self, operands):
-        self.runtime.increment_program_counter()
-        pass
+        condition = operands[0].value
+        destination = int(operands[1].value[2:len(operands[1].value) - 1])
+        s_flag = self.runtime.get_flag('s')
+        o_flag = self.runtime.get_flag('o')
+        z_flag = self.runtime.get_flag('z')
+        if condition == "greater" and not z_flag and (s_flag == o_flag):
+            self.runtime.set_program_counter(destination)
+        elif condition == "less" and (s_flag != o_flag):
+            self.runtime.set_program_counter(destination)
+        elif (condition == "equal" or condition == "zero") and z_flag:
+            self.runtime.set_program_counter(destination)
+        elif (condition == "unequal" or condition == "nonzero") and not z_flag:
+            self.runtime.set_program_counter(destination)
+        elif condition == "negative" and s_flag:
+            self.runtime.set_program_counter(destination)
+        elif condition == "positive" and not s_flag and not z_flag:
+            self.runtime.set_program_counter(destination)
+        elif condition == "unconditional":
+            self.runtime.set_program_counter(destination)
+        else:
+            self.runtime.increment_program_counter()
 
     def _execute_call(self, operands):
         self.runtime.increment_program_counter()
@@ -297,7 +316,7 @@ class ExecutionEngine:
             print(f"Runtime Error: {source_reg} is not defined.")
             self.runtime.set_program_counter(self._prog_len)
         else:
-            converted_output = self._convert_output(source_val_type[0])
+            converted_output = self._convert_output(source_val_type)
             print(f"stdout: {converted_output}")
             self.runtime.increment_program_counter()
 
@@ -354,22 +373,23 @@ class ExecutionEngine:
             return None
 
     def _convert_output(self, operand):
-        op_type = operand.operand_type
+        op_type = operand[1]
+        op_value = operand[0]
         if op_type == OperandType.MEMORY_ADDRESS:
-            return f"m<{operand.value}>"
+            return f"m<{op_value}>"
         elif op_type == OperandType.INSTRUCTION_ADDRESS:
-            return f"i[{operand.value}]"
+            return f"i[{op_value}]"
         elif op_type == OperandType.INTEGER:
-            return operand.value
+            return op_value
         elif op_type == OperandType.BOOLEAN:
-            if operand.value:
+            if op_value:
                 return 'true'
             else:
                 return 'false'
         elif op_type == OperandType.CHARACTER:
-            return chr(operand.value)
+            return chr(op_value)
         elif op_type == OperandType.STRING:
-            return str(operand.value)
+            return str(op_value)
         else:
             return None
 
