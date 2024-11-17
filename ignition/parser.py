@@ -27,7 +27,7 @@ class Parser:
                 check=False
             )
             if result.returncode != 0:
-                print(f"COMPILER ERROR(S) ENCOUNTERED:\n {result.stderr.strip()}")
+                print(f"COMPILER ERROR(S) ENCOUNTERED:\n{result.stderr.strip()}")
                 self.json_output = None
             else:
                 self.json_output = json.loads(result.stdout)
