@@ -1,5 +1,3 @@
-from jinja2.nodes import Operand
-
 from ignition.ast import InstructionType, OperandType
 INT32_MIN = -2_147_483_648
 INT32_MAX = 2_147_483_647
