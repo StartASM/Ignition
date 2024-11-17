@@ -52,12 +52,12 @@ def process_command(state, args, silent_flags, interpreter):
     if operation == "initialize":
         if state["initialized"]:
             if not silent_flags["silenti"]:
-                print(f"Error: Cannot initialize '{args.file}' as '{state['current_file']}' is already initialized. Run 'terminate' first to stop execution of the current program.")
+                print(f"Usage Error: Cannot initialize '{args.file}' as '{state['current_file']}' is already initialized. Run 'terminate' first to stop execution of the current program.")
             return state
 
         if not args.file:
             if not silent_flags["silenti"]:
-                print("Error: The 'initialize' operation requires a .sasm program file path (use --file).")
+                print("Usage Error: The 'initialize' operation requires a .sasm program file path (use --file).")
             return state
 
         success = interpreter.initialize(args.file)  # Call interpreter.initialize
@@ -69,7 +69,7 @@ def process_command(state, args, silent_flags, interpreter):
                 "current_file": args.file,
             })
         else:
-            print(f"Error: Initialization failed for program '{args.file}'. Terminating.")
+            print(f"Usage Error: Initialization failed for program '{args.file}'. Terminating.")
             interpreter.terminate()  # Implicitly terminate
             state.update({  # Update the state to reflect termination
                 "initialized": False,
@@ -81,7 +81,7 @@ def process_command(state, args, silent_flags, interpreter):
     elif operation == "restart":
         if not state["initialized"]:
             if not silent_flags["silenti"]:
-                print("Error: Cannot restart. No .sasm program has been initialized.")
+                print("Usage Error: Cannot restart. No .sasm program has been initialized.")
             return state
 
         interpreter.restart()  # Call interpreter.restart
@@ -94,21 +94,22 @@ def process_command(state, args, silent_flags, interpreter):
     elif operation in ["forward", "finish", "dump"]:
         if not state["initialized"]:
             if not silent_flags["silenti"]:
-                print(f"Error: Cannot run '{operation}' without initializing a .sasm program first.")
+                print(f"Usage Error: Cannot run '{operation}' without initializing a .sasm program first.")
             return state
 
         if operation == "forward":
             if state["finished_last"]:
                 if not silent_flags["silenti"]:
-                    print(f"Error: '{state['current_file']}' is at end of execution. Run 'terminate' or 'restart' first to reset the program.")
+                    print(f"Usage Error: '{state['current_file']}' is at end of execution. Run 'terminate' or 'restart' first to reset the program.")
                 return state
+            num_steps = args.steps or 1  # Default to 1 if no steps are provided
             state["last_operation"] = "forward"
-            interpreter.forward()
+            interpreter.forward(num_steps)
 
         elif operation == "finish":
             if state["finished_last"]:
                 if not silent_flags["silenti"]:
-                    print(f"Error: '{state['current_file']}' is already at the end of execution. Run 'restart' to execute again.")
+                    print(f"Usage Error: '{state['current_file']}' is already at the end of execution. Run 'restart' to execute again.")
                 return state
             state.update({
                 "last_operation": "finish",
@@ -118,7 +119,7 @@ def process_command(state, args, silent_flags, interpreter):
 
         elif operation == "dump":
             if not any([args.r, args.m, args.s, args.f, args.p]):
-                print("Error: No attributes chosen to dump. Run '--help' for available flags.")
+                print("Usage Error: No attributes chosen to dump. Run '--help' for available flags.")
                 return state
             print(f"Dumping system state for program '{state['current_file']}':")
             interpreter.dump(args.r, args.m, args.s, args.f, args.p, args.verbose)
@@ -126,7 +127,7 @@ def process_command(state, args, silent_flags, interpreter):
     elif operation == "terminate":
         if not state["initialized"]:
             if not silent_flags["silenti"]:
-                print("Error: Cannot terminate. No .sasm program has been initialized.")
+                print("Usage Error: Cannot terminate. No .sasm program has been initialized.")
             return state
 
         state.update({
@@ -168,7 +169,7 @@ def main():
 
     # Ensure the user provided the 'start' command
     if args.command != "start":
-        print("Error: You must provide the 'start' command to begin.")
+        print("Usage Error: You must provide the 'start' command to begin.")
         exit(1)
 
     # Instantiate the Interpreter object
@@ -197,6 +198,7 @@ def main():
         parser.add_argument("--silents", action="store_true", help="Suppress runtime errors.")
         parser.add_argument("--truesilent", action="store_true", help="Suppress all output, including errors")
         parser.add_argument("--file", type=str, help="Path to the .sasm program file (used with 'initialize').")
+        parser.add_argument("--steps", type=int, help="Number of steps to move forward (used with 'forward').")  # Add steps argument
 
         # Prompt user for input
         user_input = input("> ").strip().split()
@@ -222,3 +224,6 @@ def main():
 
         # Save state after every command
         save_state(state)
+
+if __name__ == "__main__":
+    main()

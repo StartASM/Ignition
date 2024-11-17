@@ -37,12 +37,18 @@ class Interpreter:
         self.execution_engine = ExecutionEngine(self.runtime, self._prog_len)
         return True
 
-    def forward(self):
-        self._execute_step()
+    def forward(self, steps):
+        if self._EOF:
+            print(
+                "Usage Error: 'examples/SimpleCode.sasm' is already at the end of execution. Run 'restart' to execute again.")
+        else:
+            while steps:
+                self._execute_step()
+                steps -= 1
 
     def finish(self):
         if self._EOF:
-            print("Error: 'examples/SimpleCode.sasm' is already at the end of execution. Run 'restart' to execute again.")
+            print("Usage Error: 'examples/SimpleCode.sasm' is already at the end of execution. Run 'restart' to execute again.")
         else:
             while not self._EOF:
                 self._execute_step()
@@ -163,7 +169,7 @@ class Interpreter:
     # PRIVATE METHODS
     def _execute_step(self):
         if self._EOF:
-            self.error_string += "Error: 'examples/SimpleCode.sasm' is already at the end of execution. Run 'restart' to execute again."
+            self.error_string += "Usage Error: 'examples/SimpleCode.sasm' is already at the end of execution. Run 'restart' to execute again."
         else:
             curr_instruction = self.ast.root.child_at(self.runtime.get_program_counter())
             self.execution_engine.execute(curr_instruction)

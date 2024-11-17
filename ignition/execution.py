@@ -113,6 +113,7 @@ class ExecutionEngine:
         self.runtime.increment_program_counter()
 
     def _execute_cast(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_add(self, operands):
@@ -200,15 +201,19 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_or(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_and(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_not(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_shift(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_compare(self, operands):
@@ -232,18 +237,23 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_jump(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_call(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_push(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_pop(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_return(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_stop(self, operands):
