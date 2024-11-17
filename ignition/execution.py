@@ -1,6 +1,9 @@
+from jinja2.nodes import Operand
+
 from ignition.ast import InstructionType, OperandType
 INT32_MIN = -2_147_483_648
 INT32_MAX = 2_147_483_647
+
 class ExecutionEngine:
     def __init__(self, runtime, prog_len):
         self.runtime = runtime
@@ -87,7 +90,7 @@ class ExecutionEngine:
         pass
 
     def _execute_add(self, operands):
-        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN, OperandType.CHARACTER]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
         dest_reg = operands[2].value
@@ -103,11 +106,11 @@ class ExecutionEngine:
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] + s2_val_type[0]
-            self.runtime.set_register(dest_reg, self._handle_overflow(int(result)), s1_val_type[1])
+            self.runtime.set_register(dest_reg, self._handle_overflow(int(result, s1_val_type[1])), s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_sub(self, operands):
-        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN, OperandType.CHARACTER]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
         dest_reg = operands[2].value
@@ -125,11 +128,11 @@ class ExecutionEngine:
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] - s2_val_type[0]
-            self.runtime.set_register(dest_reg, self._handle_overflow(int(result)), s1_val_type[1])
+            self.runtime.set_register(dest_reg, self._handle_overflow(int(result, s1_val_type[1])), s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_multiply(self, operands):
-        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN, OperandType.CHARACTER]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
         dest_reg = operands[2].value
@@ -147,7 +150,7 @@ class ExecutionEngine:
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] * s2_val_type[0]
-            self.runtime.set_register(dest_reg, self._handle_overflow(int(result)), s1_val_type[1])
+            self.runtime.set_register(dest_reg, self._handle_overflow(int(result, s1_val_type[1])), s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_divide(self, operands):
@@ -169,7 +172,7 @@ class ExecutionEngine:
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] // s2_val_type[0]
-            self.runtime.set_register(dest_reg, self._handle_overflow(int(result)), s1_val_type[1])
+            self.runtime.set_register(dest_reg, self._handle_overflow(int(result, s1_val_type[1])), s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_or(self, operands):
@@ -185,7 +188,7 @@ class ExecutionEngine:
         pass
 
     def _execute_compare(self, operands):
-        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN, OperandType.CHARACTER]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
         s1_val_type = self.runtime.get_register(source_reg_1)
@@ -202,7 +205,7 @@ class ExecutionEngine:
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] - s2_val_type[0]
-            self._handle_overflow(int(result))
+            self._handle_overflow(int(result, s1_val_type[1]))
             self.runtime.increment_program_counter()
 
     def _execute_jump(self, operands):
@@ -231,10 +234,17 @@ class ExecutionEngine:
             try:
                 user_input = int(user_input)
                 self.runtime.set_register(input_dest, user_input, input_type)
+                self.runtime.increment_program_counter()
             except ValueError:
-                print(f"Runtime Error: Invalid input {user_input} for type int")
+                print(f"Runtime Error: Invalid input {user_input} for type int.")
         elif input_type == OperandType.CHARACTER:
-            self.runtime.set_register(input_dest, user_input, input_type)
+            if len(user_input) > 1:
+                print(f"Runtime Error: Excess input {user_input} for type char.")
+            elif ord(user_input) > 127:
+                print(f"Runtime Error: Input {user_input} out of extended ASCII range.")
+            else:
+                self.runtime.set_register(input_dest, ord(user_input), input_type)
+                self.runtime.increment_program_counter()
         elif input_type == OperandType.BOOLEAN:
             valid_trues = ['true', '1', 'True', 't', 'TRUE', 'T']
             valid_falses = ['false', '0', 'False', 'f', 'FALSE', 'F']
@@ -242,9 +252,10 @@ class ExecutionEngine:
                 print(f"Runtime Error: Invalid input {user_input} for type bool")
             elif user_input in valid_trues:
                 self.runtime.set_register(input_dest, True, input_type)
+                self.runtime.increment_program_counter()
             elif user_input in valid_falses:
                 self.runtime.set_register(input_dest, False, input_type)
-        self.runtime.increment_program_counter()
+                self.runtime.increment_program_counter()
 
     def _execute_output(self, operands):
         source_reg = operands[0].value
@@ -253,7 +264,8 @@ class ExecutionEngine:
             print(f"Runtime Error: {source_reg} is not defined.")
             self.runtime.set_program_counter(self._prog_len)
         else:
-            print(f"stdout: {source_val_type[0]}")
+            converted_output = self._convert_output(source_val_type[0])
+            print(f"stdout: {converted_output}")
             self.runtime.increment_program_counter()
 
     def _execute_print(self, operands):
@@ -268,12 +280,16 @@ class ExecutionEngine:
 
 
     # HELPER FUNCTIONS
-    def _handle_overflow(self, result):
-        if result < INT32_MIN or result > INT32_MAX:
-            self.runtime.set_flag('o', True)
+    def _handle_overflow(self, result, type=OperandType.INTEGER):
+        if type == OperandType.CHARACTER:
+            wrapped_result = result % 256
         else:
-            self.runtime.set_flag('o', False)
-        wrapped_result = (result + 2**31) % 2**32 - 2**31
+            wrapped_result = (result + 2 ** 31) % 2 ** 32 - 2 ** 31
+            if result < INT32_MIN or result > INT32_MAX:
+                self.runtime.set_flag('o', True)
+            else:
+                self.runtime.set_flag('o', False)
+
         if wrapped_result == 0:
             self.runtime.set_flag('z', True)
             self.runtime.set_flag('s', False)
@@ -297,7 +313,29 @@ class ExecutionEngine:
                 return True
             elif operand.value == 'false':
                 return False
-        elif op_type == OperandType.CHARACTER or op_type == OperandType.STRING:
+        elif op_type == OperandType.CHARACTER:
+            return ord(operand.value)
+        elif op_type == OperandType.STRING:
+            return str(operand.value)
+        else:
+            return None
+
+    def _convert_output(self, operand):
+        op_type = operand.operand_type
+        if op_type == OperandType.MEMORY_ADDRESS:
+            return f"m<{operand.value}>"
+        elif op_type == OperandType.INSTRUCTION_ADDRESS:
+            return f"i[{operand.value}]"
+        elif op_type == OperandType.INTEGER:
+            return operand.value
+        elif op_type == OperandType.BOOLEAN:
+            if operand.value:
+                return 'true'
+            else:
+                return 'false'
+        elif op_type == OperandType.CHARACTER:
+            return chr(operand.value)
+        elif op_type == OperandType.STRING:
             return str(operand.value)
         else:
             return None
