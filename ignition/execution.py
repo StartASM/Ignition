@@ -1,6 +1,9 @@
+from jinja2.nodes import Operand
+
 from ignition.ast import InstructionType, OperandType
 INT32_MIN = -2_147_483_648
 INT32_MAX = 2_147_483_647
+
 class ExecutionEngine:
     def __init__(self, runtime, prog_len):
         self.runtime = runtime
@@ -45,36 +48,62 @@ class ExecutionEngine:
         target_reg = operands[1].value
         source_val_type = self.runtime.get_register(source_reg)
         if source_val_type is None:
+            print(f"Runtime Error: Source register {source_reg} is not initialized.")
             self.runtime.set_program_counter(self._prog_len)
         else:
             self.runtime.set_register(target_reg, source_val_type[0], source_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_load(self, operands):
-        source_reg = operands[0].value
+        source = operands[0].value
         target_reg = operands[1].value
-        source_val_type = self.runtime.get_register(source_reg)
-        if source_val_type[1] != OperandType.MEMORY_ADDRESS:
-            print(f"Runtime Error: Source register {target_reg[0]} does not contain a memory address.")
-        elif not self.runtime.addr_exists(source_val_type[0]):
-            print(f"Runtime Error: Memory address {source_val_type[0]} is not initialized.")
-        else:
-            mem_val_type = self.runtime.get_memory(source_val_type[0])
-            self.runtime.set_register(target_reg, mem_val_type[0], mem_val_type[1])
-            self.runtime.increment_program_counter()
+        if source[0] == 'r':
+            source_val_type = self.runtime.get_register(source)
+            if source_val_type[1] != OperandType.MEMORY_ADDRESS:
+                print(f"Runtime Error: Source register {target_reg[0]} does not contain a memory address.")
+                self.runtime.set_program_counter(self._prog_len)
+            elif not self.runtime.addr_initialized(source_val_type[0]):
+                print(f"Runtime Error: Memory address {source_val_type[0]} is not initialized.")
+                self.runtime.set_program_counter(self._prog_len)
+            else:
+                mem_val_type = self.runtime.get_memory(source_val_type[0])
+                self.runtime.set_register(target_reg, mem_val_type[0], mem_val_type[1])
+                self.runtime.increment_program_counter()
+        elif source[0] == 'm':
+            source_mem = source[2:len(source) - 1]
+            print(source_mem)
+            if not self.runtime.addr_initialized(source_mem):
+                print(f"Runtime Error: Memory address {source_mem} is not initialized.")
+                self.runtime.set_program_counter(self._prog_len)
+            else:
+                mem_val_type = self.runtime.get_memory(source_mem)
+                self.runtime.set_register(target_reg, mem_val_type[0], mem_val_type[1])
+                self.runtime.increment_program_counter()
 
     def _execute_store(self, operands):
         source_reg = operands[0].value
-        target_reg = operands[1].value
+        target = operands[1].value
         source_val_type = self.runtime.get_register(source_reg)
-        target_val_type = self.runtime.get_register(target_reg)
-        if source_val_type is None:
-            self.runtime.set_program_counter(self._prog_len)
-        elif target_val_type[1] != OperandType.MEMORY_ADDRESS:
-            print(f"Runtime Error: Target register {target_reg[0]} does not contain a memory address")
-        else:
-            self.runtime.set_memory(target_val_type[0], source_val_type[0], source_val_type[1])
-            self.runtime.increment_program_counter()
+        if target[0] == 'r':
+            target_val_type = self.runtime.get_register(target)
+            if source_val_type is None:
+                print(f"Runtime Error: Source register {source_reg} is uninitialized.")
+                self.runtime.set_program_counter(self._prog_len)
+            elif target_val_type[1] != OperandType.MEMORY_ADDRESS:
+                print(f"Runtime Error: Target register {target} does not contain a memory address.")
+                self.runtime.set_program_counter(self._prog_len)
+            else:
+                self.runtime.set_memory(target_val_type[0], source_val_type[0], source_val_type[1])
+                self.runtime.increment_program_counter()
+        elif target[0] == 'm':
+            target_mem = target[2:len(target) - 1]
+            if source_val_type is None:
+                print(f"Runtime Error: Source register {source_reg} is uninitialized.")
+                self.runtime.set_program_counter(self._prog_len)
+            else:
+                self.runtime.set_memory(target_mem, source_val_type[0], source_val_type[1])
+                self.runtime.increment_program_counter()
+
 
     def _execute_create(self, operands):
         val_type = self._convert_type_enum(operands[0].value)
@@ -84,16 +113,18 @@ class ExecutionEngine:
         self.runtime.increment_program_counter()
 
     def _execute_cast(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_add(self, operands):
-        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN, OperandType.CHARACTER]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
         dest_reg = operands[2].value
         s1_val_type = self.runtime.get_register(source_reg_1)
         s2_val_type = self.runtime.get_register(source_reg_2)
         if s1_val_type is None or s2_val_type is None:
+            print(f"Runtime Error: Source reg {source_reg_1} and/or source reg {source_reg_2} is not initialized.")
             self.runtime.set_program_counter(self._prog_len)
         elif s1_val_type[1] != s2_val_type[1]:
             print(f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
@@ -103,51 +134,49 @@ class ExecutionEngine:
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] + s2_val_type[0]
-            self.runtime.set_register(dest_reg, self._handle_overflow(int(result)), s1_val_type[1])
+            self.runtime.set_register(dest_reg, self._handle_overflow(result, s1_val_type[1]), s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_sub(self, operands):
-        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN, OperandType.CHARACTER]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
         dest_reg = operands[2].value
         s1_val_type = self.runtime.get_register(source_reg_1)
         s2_val_type = self.runtime.get_register(source_reg_2)
         if s1_val_type is None or s2_val_type is None:
+            print(f"Runtime Error: Source reg {source_reg_1} and/or source reg {source_reg_2} is not initialized.")
             self.runtime.set_program_counter(self._prog_len)
         elif s1_val_type[1] != s2_val_type[1]:
-            print(
-                f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
+            print(f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
             self.runtime.set_program_counter(self._prog_len)
         elif s1_val_type[1] not in permitted_types:
-            print(
-                f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} are of different types for subtraction.")
+            print(f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} are of different types for subtraction.")
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] - s2_val_type[0]
-            self.runtime.set_register(dest_reg, self._handle_overflow(int(result)), s1_val_type[1])
+            self.runtime.set_register(dest_reg, self._handle_overflow(result, s1_val_type[1]), s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_multiply(self, operands):
-        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN, OperandType.CHARACTER]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
         dest_reg = operands[2].value
         s1_val_type = self.runtime.get_register(source_reg_1)
         s2_val_type = self.runtime.get_register(source_reg_2)
         if s1_val_type is None or s2_val_type is None:
+            print(f"Runtime Error: Source reg {source_reg_1} and/or source reg {source_reg_2} is not initialized.")
             self.runtime.set_program_counter(self._prog_len)
         elif s1_val_type[1] != s2_val_type[1]:
-            print(
-                f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
+            print(f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
             self.runtime.set_program_counter(self._prog_len)
         elif s1_val_type[1] not in permitted_types:
-            print(
-                f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} are of different types for multiplication.")
+            print(f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} are of different types for multiplication.")
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] * s2_val_type[0]
-            self.runtime.set_register(dest_reg, self._handle_overflow(int(result)), s1_val_type[1])
+            self.runtime.set_register(dest_reg, self._handle_overflow(result, s1_val_type[1]), s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_divide(self, operands):
@@ -158,66 +187,73 @@ class ExecutionEngine:
         s1_val_type = self.runtime.get_register(source_reg_1)
         s2_val_type = self.runtime.get_register(source_reg_2)
         if s1_val_type is None or s2_val_type is None:
+            print(f"Runtime Error: Source reg {source_reg_1} and/or source reg {source_reg_2} is not initialized.")
             self.runtime.set_program_counter(self._prog_len)
         elif s1_val_type[1] != s2_val_type[1]:
-            print(
-                f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
+            print(f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
             self.runtime.set_program_counter(self._prog_len)
         elif s1_val_type[1] not in permitted_types:
-            print(
-                f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} are of different types for division.")
+            print(f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} are of different types for division.")
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] // s2_val_type[0]
-            self.runtime.set_register(dest_reg, self._handle_overflow(int(result)), s1_val_type[1])
+            self.runtime.set_register(dest_reg, self._handle_overflow(result, s1_val_type[1]), s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_or(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_and(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_not(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_shift(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_compare(self, operands):
-        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN]
+        permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN, OperandType.CHARACTER]
         source_reg_1 = operands[0].value
         source_reg_2 = operands[1].value
         s1_val_type = self.runtime.get_register(source_reg_1)
         s2_val_type = self.runtime.get_register(source_reg_2)
         if s1_val_type is None or s2_val_type is None:
+            print(f"Runtime Error: Source reg {source_reg_1} and/or source reg {source_reg_2} is not initialized.")
             self.runtime.set_program_counter(self._prog_len)
         elif s1_val_type[1] != s2_val_type[1]:
-            print(
-                f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
+            print(f"Runtime Error: {source_reg_1} and {source_reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
             self.runtime.set_program_counter(self._prog_len)
         elif s1_val_type[1] not in permitted_types:
-            print(
-                f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} are of different types for subtraction.")
+            print(f"Runtime Error: {source_reg_1} and {source_reg_2} are of incompatible types {s1_val_type[1]}, {s2_val_type[1]} are of different types for subtraction.")
             self.runtime.set_program_counter(self._prog_len)
         else:
             result = s1_val_type[0] - s2_val_type[0]
-            self._handle_overflow(int(result))
+            self._handle_overflow(result, s1_val_type[1])
             self.runtime.increment_program_counter()
 
     def _execute_jump(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_call(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_push(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_pop(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_return(self, operands):
+        self.runtime.increment_program_counter()
         pass
 
     def _execute_stop(self, operands):
@@ -231,20 +267,28 @@ class ExecutionEngine:
             try:
                 user_input = int(user_input)
                 self.runtime.set_register(input_dest, user_input, input_type)
+                self.runtime.increment_program_counter()
             except ValueError:
-                print(f"Runtime Error: Invalid input {user_input} for type int")
+                print(f"Input Error: Invalid input {user_input} for type int.")
         elif input_type == OperandType.CHARACTER:
-            self.runtime.set_register(input_dest, user_input, input_type)
+            if len(user_input) > 1:
+                print(f"Input Error: Excess input {user_input} for type char.")
+            elif ord(user_input) > 127:
+                print(f"Input Error: Input {user_input} out of extended ASCII range.")
+            else:
+                self.runtime.set_register(input_dest, ord(user_input), input_type)
+                self.runtime.increment_program_counter()
         elif input_type == OperandType.BOOLEAN:
             valid_trues = ['true', '1', 'True', 't', 'TRUE', 'T']
             valid_falses = ['false', '0', 'False', 'f', 'FALSE', 'F']
             if user_input not in valid_trues or user_input not in valid_falses:
-                print(f"Runtime Error: Invalid input {user_input} for type bool")
+                print(f"Input Error: Invalid input {user_input} for type bool.")
             elif user_input in valid_trues:
                 self.runtime.set_register(input_dest, True, input_type)
+                self.runtime.increment_program_counter()
             elif user_input in valid_falses:
                 self.runtime.set_register(input_dest, False, input_type)
-        self.runtime.increment_program_counter()
+                self.runtime.increment_program_counter()
 
     def _execute_output(self, operands):
         source_reg = operands[0].value
@@ -253,7 +297,8 @@ class ExecutionEngine:
             print(f"Runtime Error: {source_reg} is not defined.")
             self.runtime.set_program_counter(self._prog_len)
         else:
-            print(f"stdout: {source_val_type[0]}")
+            converted_output = self._convert_output(source_val_type[0])
+            print(f"stdout: {converted_output}")
             self.runtime.increment_program_counter()
 
     def _execute_print(self, operands):
@@ -268,12 +313,16 @@ class ExecutionEngine:
 
 
     # HELPER FUNCTIONS
-    def _handle_overflow(self, result):
-        if result < INT32_MIN or result > INT32_MAX:
-            self.runtime.set_flag('o', True)
+    def _handle_overflow(self, result, type):
+        if type == OperandType.CHARACTER:
+            wrapped_result = result % 256
         else:
-            self.runtime.set_flag('o', False)
-        wrapped_result = (result + 2**31) % 2**32 - 2**31
+            wrapped_result = (result + 2 ** 31) % 2 ** 32 - 2 ** 31
+            if result < INT32_MIN or result > INT32_MAX:
+                self.runtime.set_flag('o', True)
+            else:
+                self.runtime.set_flag('o', False)
+
         if wrapped_result == 0:
             self.runtime.set_flag('z', True)
             self.runtime.set_flag('s', False)
@@ -297,7 +346,29 @@ class ExecutionEngine:
                 return True
             elif operand.value == 'false':
                 return False
-        elif op_type == OperandType.CHARACTER or op_type == OperandType.STRING:
+        elif op_type == OperandType.CHARACTER:
+            return ord(operand.value)
+        elif op_type == OperandType.STRING:
+            return str(operand.value)
+        else:
+            return None
+
+    def _convert_output(self, operand):
+        op_type = operand.operand_type
+        if op_type == OperandType.MEMORY_ADDRESS:
+            return f"m<{operand.value}>"
+        elif op_type == OperandType.INSTRUCTION_ADDRESS:
+            return f"i[{operand.value}]"
+        elif op_type == OperandType.INTEGER:
+            return operand.value
+        elif op_type == OperandType.BOOLEAN:
+            if operand.value:
+                return 'true'
+            else:
+                return 'false'
+        elif op_type == OperandType.CHARACTER:
+            return chr(operand.value)
+        elif op_type == OperandType.STRING:
             return str(operand.value)
         else:
             return None
