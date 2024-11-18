@@ -207,8 +207,23 @@ class ExecutionEngine:
         pass
 
     def _execute_not(self, operands):
-        self.runtime.increment_program_counter()
-        pass
+        reg = operands[0].value
+        val_type = self.runtime.get_register(reg)
+        if val_type is None:
+            print(f"Runtime Error: Source register {reg} is not initialized.")
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            if val_type[1] == OperandType.BOOLEAN:
+                self.runtime.set_register(reg, self._handle_overflow((not val_type[0]), val_type[1]), OperandType.BOOLEAN)
+                self.runtime.increment_program_counter()
+            else:
+                mask = 0xFFFFFFFF
+                value = mask & val_type[0]
+                result = ~value & mask
+                if result > 0x7FFFFFFF:
+                    result -= 0x100000000
+                self.runtime.set_register(reg, self._handle_overflow(result, val_type[1]), val_type[1])
+                self.runtime.increment_program_counter()
 
     def _execute_shift(self, operands):
         direction = operands[0].value
@@ -227,7 +242,7 @@ class ExecutionEngine:
             self.runtime.set_program_counter(self._prog_len)
         else:
             if source_val_type[1] == OperandType.BOOLEAN:
-                self.runtime.set_register(source_reg, False, OperandType.BOOLEAN)
+                self.runtime.set_register(source_reg, self._handle_overflow(False, OperandType.BOOLEAN), OperandType.BOOLEAN)
                 self.runtime.increment_program_counter()
             else:
                 mask = 0xFFFFFFFF
