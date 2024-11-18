@@ -211,8 +211,39 @@ class ExecutionEngine:
         pass
 
     def _execute_shift(self, operands):
-        self.runtime.increment_program_counter()
-        pass
+        direction = operands[0].value
+        source_reg = operands[1].value
+        shift_reg = operands[2].value
+        source_val_type = self.runtime.get_register(source_reg)
+        shift_val_type = self.runtime.get_register(shift_reg)
+        if source_val_type is None:
+            print(f"Runtime Error: Source register {source_reg} is not initialized.")
+            self.runtime.set_program_counter(self._prog_len)
+        elif shift_val_type is None:
+            print(f"Runtime Error: Shift register {shift_reg} is not initialized.")
+            self.runtime.set_program_counter(self._prog_len)
+        elif shift_val_type[1] != OperandType.INTEGER:
+            print(f"Runtime Error: Shift register {shift_reg} does not contain type int.")
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            if source_val_type[1] == OperandType.BOOLEAN:
+                self.runtime.set_register(source_reg, False, OperandType.BOOLEAN)
+                self.runtime.increment_program_counter()
+            else:
+                mask = 0xFFFFFFFF
+                shift = shift_val_type[0]
+                value = source_val_type[0]&mask
+                result = None
+                if direction == "left":
+                    result = (value << shift) & mask
+                else:
+                    if value > 0x7FFFFFFF:
+                        value -= 0x100000000
+                    result = (value >> shift) & mask
+                if result > 0x7FFFFFFF:
+                    result -= 0x100000000
+                self.runtime.set_register(source_reg, self._handle_overflow(result, source_val_type[1]), source_val_type[1])
+                self.runtime.increment_program_counter()
 
     def _execute_compare(self, operands):
         permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN, OperandType.CHARACTER]
