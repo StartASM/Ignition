@@ -22,7 +22,7 @@ def load_state():
             with open(CONFIG_FILE, "r") as f:
                 state = json.load(f)
         except json.JSONDecodeError:
-            print("Warning: config.json is corrupted. Reinitializing with default state.")
+            print("Usage Warning: config.json is corrupted. Reinitializing with default state.")
             state = DEFAULT_STATE
     else:
         state = DEFAULT_STATE

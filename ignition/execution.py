@@ -280,32 +280,33 @@ class ExecutionEngine:
         input_type = self._convert_type_enum(operands[0].value)
         input_dest = operands[1].value
         user_input = input("stdin: ")
-        if input_type == OperandType.INTEGER:
-            try:
-                user_input = int(user_input)
-                self.runtime.set_register(input_dest, user_input, input_type)
-                self.runtime.increment_program_counter()
-            except ValueError:
-                print(f"Input Error: Invalid input {user_input} for type int.")
-        elif input_type == OperandType.CHARACTER:
-            if len(user_input) > 1:
-                print(f"Input Error: Excess input {user_input} for type char.")
-            elif ord(user_input) > 127:
-                print(f"Input Error: Input {user_input} out of extended ASCII range.")
-            else:
-                self.runtime.set_register(input_dest, ord(user_input), input_type)
-                self.runtime.increment_program_counter()
-        elif input_type == OperandType.BOOLEAN:
-            valid_trues = ['true', '1', 'True', 't', 'TRUE', 'T']
-            valid_falses = ['false', '0', 'False', 'f', 'FALSE', 'F']
-            if user_input not in valid_trues or user_input not in valid_falses:
-                print(f"Input Error: Invalid input {user_input} for type bool.")
-            elif user_input in valid_trues:
-                self.runtime.set_register(input_dest, True, input_type)
-                self.runtime.increment_program_counter()
-            elif user_input in valid_falses:
-                self.runtime.set_register(input_dest, False, input_type)
-                self.runtime.increment_program_counter()
+        if len(user_input) > 0:
+            if input_type == OperandType.INTEGER:
+                try:
+                    user_input = int(user_input)
+                    self.runtime.set_register(input_dest, user_input, input_type)
+                    self.runtime.increment_program_counter()
+                except ValueError:
+                    print(f"Input Error: Invalid input {user_input} for type int.")
+            elif input_type == OperandType.CHARACTER:
+                if len(user_input) > 1:
+                    print(f"Input Error: Excess input {user_input} for type char.")
+                elif ord(user_input) > 127:
+                    print(f"Input Error: Input {user_input} out of extended ASCII range.")
+                else:
+                    self.runtime.set_register(input_dest, ord(user_input), input_type)
+                    self.runtime.increment_program_counter()
+            elif input_type == OperandType.BOOLEAN:
+                valid_trues = ['true', '1', 'True', 't', 'TRUE', 'T']
+                valid_falses = ['false', '0', 'False', 'f', 'FALSE', 'F']
+                if user_input not in valid_trues or user_input not in valid_falses:
+                    print(f"Input Error: Invalid input {user_input} for type bool.")
+                elif user_input in valid_trues:
+                    self.runtime.set_register(input_dest, True, input_type)
+                    self.runtime.increment_program_counter()
+                elif user_input in valid_falses:
+                    self.runtime.set_register(input_dest, False, input_type)
+                    self.runtime.increment_program_counter()
 
     def _execute_output(self, operands):
         source_reg = operands[0].value
@@ -315,7 +316,7 @@ class ExecutionEngine:
             self.runtime.set_program_counter(self._prog_len)
         else:
             converted_output = self._convert_output(source_val_type)
-            print(f"stdout: {converted_output}")
+            print(converted_output, end="")
             self.runtime.increment_program_counter()
 
     def _execute_print(self, operands):
