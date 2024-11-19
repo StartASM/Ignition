@@ -199,12 +199,45 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_or(self, operands):
-        self.runtime.increment_program_counter()
-        pass
+        reg_1 = operands[0].value
+        reg_2 = operands[1].value
+        s1_val_type = self.runtime.get_register(reg_1)
+        s2_val_type = self.runtime.get_register(reg_2)
+        if s1_val_type is None or s2_val_type is None:
+            print(f"Runtime Error: Source reg {reg_1} and/or source reg {reg_2} is not initialized.")
+            self.runtime.set_program_counter(self._prog_len)
+        elif s1_val_type[1] != s2_val_type[1]:
+            print(
+                f"Runtime Error: {reg_1} and {reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            mask = 0xFFFFFFFF
+            s1_val_type[0] &= mask
+            s2_val_type[0] &= mask
+            result = s1_val_type[0] | s2_val_type[0]
+            result &= mask
+            self.runtime.set_register(reg_1, self._handle_overflow(result, s1_val_type[1]), s1_val_type[1])
+            self.runtime.increment_program_counter()
 
     def _execute_and(self, operands):
-        self.runtime.increment_program_counter()
-        pass
+        reg_1 = operands[0].value
+        reg_2 = operands[1].value
+        s1_val_type = self.runtime.get_register(reg_1)
+        s2_val_type = self.runtime.get_register(reg_2)
+        if s1_val_type is None or s2_val_type is None:
+            print(f"Runtime Error: Source reg {reg_1} and/or source reg {reg_2} is not initialized.")
+            self.runtime.set_program_counter(self._prog_len)
+        elif s1_val_type[1] != s2_val_type[1]:
+            print(
+                f"Runtime Error: {reg_1} and {reg_2} are of different types {s1_val_type[1]}, {s2_val_type[1]}.")
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            mask = 0xFFFFFFFF
+            s1_val_type[0] &= mask
+            s2_val_type[0] &= mask
+            result = s1_val_type[0] & s2_val_type[0]
+            self.runtime.set_register(reg_1, self._handle_overflow(result, s1_val_type[1]), s1_val_type[1])
+            self.runtime.increment_program_counter()
 
     def _execute_not(self, operands):
         reg = operands[0].value
@@ -220,8 +253,6 @@ class ExecutionEngine:
                 mask = 0xFFFFFFFF
                 value = mask & val_type[0]
                 result = ~value & mask
-                if result > 0x7FFFFFFF:
-                    result -= 0x100000000
                 self.runtime.set_register(reg, self._handle_overflow(result, val_type[1]), val_type[1])
                 self.runtime.increment_program_counter()
 
@@ -255,8 +286,6 @@ class ExecutionEngine:
                     if value > 0x7FFFFFFF:
                         value -= 0x100000000
                     result = (value >> shift) & mask
-                if result > 0x7FFFFFFF:
-                    result -= 0x100000000
                 self.runtime.set_register(source_reg, self._handle_overflow(result, source_val_type[1]), source_val_type[1])
                 self.runtime.increment_program_counter()
 

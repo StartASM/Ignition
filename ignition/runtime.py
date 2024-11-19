@@ -3,17 +3,7 @@ from ignition.ast import OperandType
 class Runtime:
     def __init__(self):
         # Registers (Val, Type)
-        self.registers = {
-            "r1": [None, None],
-            "r2": [None, None],
-            "r3": [None, None],
-            "r4": [None, None],
-            "r5": [None, None],
-            "r6": [None, None],
-            "r7": [None, None],
-            "r8": [None, None],
-            "r9": [None, None],
-        }
+        self.registers = [[None,None],[None, None],[None, None],[None, None],[None, None],[None, None],[None, None],[None, None],[None, None],[None, None]]
         # Memory
         self.memory = {}
         # Stack
@@ -25,24 +15,21 @@ class Runtime:
         self.z_flag = False  # Zero Flag
         self.o_flag = False  # Overflow Flag
         self.s_flag = False  # Sign Flag
-        self.error = ""
 
     # REGISTER OPERATIONS
     def set_register(self, reg, val, type):
-        self.registers[reg] = [val,type]
+        self.registers[int(reg[1])] = [val,type]
     def get_register(self, reg):
-        if self.registers[reg][0] is None:
-            self.error = "Runtime Error: Non-initialized register access at " + reg
+        if self.registers[int(reg[1])][0] is None:
             return None
         else:
-            return self.registers[reg]
+            return self.registers[int(reg[1])]
 
     # MEMORY OPERATIONS
     def set_memory(self, addr, val, type):
         self.memory[addr] = [val, type]
     def get_memory(self, addr):
         if addr not in self.memory.keys():
-            self.error = "Runtime Error: Non-initialized memory access at " + addr
             return None
         else:
             return self.memory[addr]
@@ -60,7 +47,6 @@ class Runtime:
             self.s_pointer = self.stack[-1]
             return ret
         else:
-            self.error = "Runtime Error: Stack is already empty"
             return None
     def get_stack_pointer(self):
         return self.s_pointer
@@ -75,24 +61,26 @@ class Runtime:
 
     # FLAG OPERATIONS
     def set_flag(self, flag, state):
-        if flag == 'z':
-            self.z_flag = state
-        elif flag =='o':
-            self.o_flag = state
-        elif flag == 's':
-            self.s_flag = state
+        match flag:
+            case 'z':
+                self.z_flag = state
+            case 'o':
+                self.o_flag = state
+            case 's':
+                self.s_flag = state
 
     def get_flag(self, flag):
-        if flag == 'z':
-            return self.z_flag
-        elif flag == 'o':
-            return self.o_flag
-        elif flag == 's':
-            return self.s_flag
+        match flag:
+            case 'z':
+                return self.z_flag
+            case 'o':
+                return self.o_flag
+            case 's':
+                return self.s_flag
 
     # DUMP OPERATIONS
     def dump_registers(self):
-        reg_output = " ".join(f"{reg}:{val[0]}({val[1]})" for reg, val in self.registers.items())
+        reg_output = " ".join(f"r{i}:{val[0]}({val[1]})" if val[0] is not None else f"r{i}:None" for i, val in enumerate(self.registers))
         return reg_output
     def dump_memory(self):
         mem_output = " ".join(f"{addr}:{val[0]}({val[1]})" for addr, val in sorted(self.memory.items()))
@@ -111,10 +99,6 @@ class Runtime:
         prog_state += f"mem:{len(self.memory)*4}B "
         prog_state += f"stack:{len(self.stack)*4}B"
         return prog_state
-
-    #ERROR HANDLING
-    def read_error(self):
-        return self.error
 
 
 
