@@ -55,52 +55,54 @@ class ExecutionEngine:
     def _execute_load(self, operands):
         source = operands[0].value
         target_reg = operands[1].value
-        if source[0] == 'r':
-            source_val_type = self.runtime.get_register(source)
-            if source_val_type[1] != OperandType.MEMORY_ADDRESS:
-                print(f"Runtime Error: Source register {target_reg[0]} does not contain a memory address.")
-                self.runtime.set_program_counter(self._prog_len)
-            elif not self.runtime.addr_initialized(source_val_type[0]):
-                print(f"Runtime Error: Memory address {source_val_type[0]} is not initialized.")
-                self.runtime.set_program_counter(self._prog_len)
-            else:
-                mem_val_type = self.runtime.get_memory(source_val_type[0])
-                self.runtime.set_register(target_reg, mem_val_type[0], mem_val_type[1])
-                self.runtime.increment_program_counter()
-        elif source[0] == 'm':
-            source_mem = source[2:len(source) - 1]
-            print(source_mem)
-            if not self.runtime.addr_initialized(source_mem):
-                print(f"Runtime Error: Memory address {source_mem} is not initialized.")
-                self.runtime.set_program_counter(self._prog_len)
-            else:
-                mem_val_type = self.runtime.get_memory(source_mem)
-                self.runtime.set_register(target_reg, mem_val_type[0], mem_val_type[1])
-                self.runtime.increment_program_counter()
+        match source[0]:
+            case 'r':
+                source_val_type = self.runtime.get_register(source)
+                if source_val_type[1] != OperandType.MEMORY_ADDRESS:
+                    print(f"Runtime Error: Source register {target_reg[0]} does not contain a memory address.")
+                    self.runtime.set_program_counter(self._prog_len)
+                elif not self.runtime.addr_initialized(source_val_type[0]):
+                    print(f"Runtime Error: Memory address {source_val_type[0]} is not initialized.")
+                    self.runtime.set_program_counter(self._prog_len)
+                else:
+                    mem_val_type = self.runtime.get_memory(source_val_type[0])
+                    self.runtime.set_register(target_reg, mem_val_type[0], mem_val_type[1])
+                    self.runtime.increment_program_counter()
+            case 'm':
+                source_mem = source[2:len(source) - 1]
+                print(source_mem)
+                if not self.runtime.addr_initialized(source_mem):
+                    print(f"Runtime Error: Memory address {source_mem} is not initialized.")
+                    self.runtime.set_program_counter(self._prog_len)
+                else:
+                    mem_val_type = self.runtime.get_memory(source_mem)
+                    self.runtime.set_register(target_reg, mem_val_type[0], mem_val_type[1])
+                    self.runtime.increment_program_counter()
 
     def _execute_store(self, operands):
         source_reg = operands[0].value
         target = operands[1].value
         source_val_type = self.runtime.get_register(source_reg)
-        if target[0] == 'r':
-            target_val_type = self.runtime.get_register(target)
-            if source_val_type is None:
-                print(f"Runtime Error: Source register {source_reg} is uninitialized.")
-                self.runtime.set_program_counter(self._prog_len)
-            elif target_val_type[1] != OperandType.MEMORY_ADDRESS:
-                print(f"Runtime Error: Target register {target} does not contain a memory address.")
-                self.runtime.set_program_counter(self._prog_len)
-            else:
-                self.runtime.set_memory(target_val_type[0], source_val_type[0], source_val_type[1])
-                self.runtime.increment_program_counter()
-        elif target[0] == 'm':
-            target_mem = target[2:len(target) - 1]
-            if source_val_type is None:
-                print(f"Runtime Error: Source register {source_reg} is uninitialized.")
-                self.runtime.set_program_counter(self._prog_len)
-            else:
-                self.runtime.set_memory(target_mem, source_val_type[0], source_val_type[1])
-                self.runtime.increment_program_counter()
+        match target[0]:
+            case 'r':
+                target_val_type = self.runtime.get_register(target)
+                if source_val_type is None:
+                    print(f"Runtime Error: Source register {source_reg} is uninitialized.")
+                    self.runtime.set_program_counter(self._prog_len)
+                elif target_val_type[1] != OperandType.MEMORY_ADDRESS:
+                    print(f"Runtime Error: Target register {target} does not contain a memory address.")
+                    self.runtime.set_program_counter(self._prog_len)
+                else:
+                    self.runtime.set_memory(target_val_type[0], source_val_type[0], source_val_type[1])
+                    self.runtime.increment_program_counter()
+            case 'm':
+                target_mem = target[2:len(target) - 1]
+                if source_val_type is None:
+                    print(f"Runtime Error: Source register {source_reg} is uninitialized.")
+                    self.runtime.set_program_counter(self._prog_len)
+                else:
+                    self.runtime.set_memory(target_mem, source_val_type[0], source_val_type[1])
+                    self.runtime.increment_program_counter()
 
 
     def _execute_create(self, operands):
@@ -315,22 +317,23 @@ class ExecutionEngine:
         s_flag = self.runtime.get_flag('s')
         o_flag = self.runtime.get_flag('o')
         z_flag = self.runtime.get_flag('z')
-        if condition == "greater" and not z_flag and (s_flag == o_flag):
-            self.runtime.set_program_counter(destination)
-        elif condition == "less" and (s_flag != o_flag):
-            self.runtime.set_program_counter(destination)
-        elif (condition == "equal" or condition == "zero") and z_flag:
-            self.runtime.set_program_counter(destination)
-        elif (condition == "unequal" or condition == "nonzero") and not z_flag:
-            self.runtime.set_program_counter(destination)
-        elif condition == "negative" and s_flag:
-            self.runtime.set_program_counter(destination)
-        elif condition == "positive" and not s_flag and not z_flag:
-            self.runtime.set_program_counter(destination)
-        elif condition == "unconditional":
-            self.runtime.set_program_counter(destination)
-        else:
-            self.runtime.increment_program_counter()
+        match condition:
+            case "greater" if not z_flag and (s_flag == o_flag):
+                self.runtime.set_program_counter(destination)
+            case "less" if s_flag != o_flag:
+                self.runtime.set_program_counter(destination)
+            case "equal"|"zero" if z_flag:
+                self.runtime.set_program_counter(destination)
+            case "unequal"|"nonzero" if not z_flag:
+                self.runtime.set_program_counter(destination)
+            case "negative" if s_flag:
+                self.runtime.set_program_counter(destination)
+            case "positive" if not s_flag and not z_flag:
+                self.runtime.set_program_counter(destination)
+            case "unconditional":
+                self.runtime.set_program_counter(destination)
+            case _:
+                self.runtime.increment_program_counter()
 
     def _execute_call(self, operands):
         self.runtime.increment_program_counter()
@@ -427,7 +430,6 @@ class ExecutionEngine:
                 self.runtime.set_flag('o', True)
             else:
                 self.runtime.set_flag('o', False)
-
         if wrapped_result == 0:
             self.runtime.set_flag('z', True)
             self.runtime.set_flag('s', False)
@@ -442,50 +444,53 @@ class ExecutionEngine:
 
     def _convert_value(self, operand):
         op_type = operand.operand_type
-        if op_type == OperandType.MEMORY_ADDRESS or op_type == OperandType.INSTRUCTION_ADDRESS:
-            return int(operand.value[2:len(operand.value) - 1])
-        elif op_type == OperandType.INTEGER:
-            return int(operand.value)
-        elif op_type == OperandType.BOOLEAN:
-            if operand.value == 'true':
-                return True
-            elif operand.value == 'false':
-                return False
-        elif op_type == OperandType.CHARACTER:
-            return ord(operand.value)
-        elif op_type == OperandType.STRING:
-            return str(operand.value)
-        else:
-            return None
+        match op_type:
+            case OperandType.MEMORY_ADDRESS | OperandType.INSTRUCTION_ADDRESS:
+                return int(operand.value[2:len(operand.value) - 1])
+            case OperandType.INTEGER:
+                return int(operand.value)
+            case OperandType.BOOLEAN:
+                if operand.value == 'true':
+                    return True
+                elif operand.value == 'false':
+                    return False
+            case OperandType.CHARACTER:
+                return ord(operand.value)
+            case OperandType.STRING:
+                return str(operand.value)
+            case _:
+                return None
 
     def _convert_output(self, operand):
         op_type = operand[1]
         op_value = operand[0]
-        if op_type == OperandType.MEMORY_ADDRESS:
-            return f"m<{op_value}>"
-        elif op_type == OperandType.INSTRUCTION_ADDRESS:
-            return f"i[{op_value}]"
-        elif op_type == OperandType.INTEGER:
-            return op_value
-        elif op_type == OperandType.BOOLEAN:
-            if op_value:
-                return 'true'
-            else:
-                return 'false'
-        elif op_type == OperandType.CHARACTER:
-            return chr(op_value)
-        elif op_type == OperandType.STRING:
-            return str(op_value)
-        else:
-            return None
+        match op_type:
+            case OperandType.MEMORY_ADDRESS:
+                return f"m<{op_value}>"
+            case OperandType.INSTRUCTION_ADDRESS:
+                return f"i[{op_value}]"
+            case OperandType.INTEGER:
+                return op_value
+            case OperandType.BOOLEAN:
+                if op_value:
+                    return 'true'
+                else:
+                    return 'false'
+            case OperandType.CHARACTER:
+                return chr(op_value)
+            case OperandType.STRING:
+                return str(op_value)
+            case _:
+                return None
 
     def _convert_type_enum(self, str_type):
-        if str_type == "integer":
-            return OperandType.INTEGER
-        elif str_type == "boolean":
-            return OperandType.BOOLEAN
-        elif str_type == "character":
-            return OperandType.CHARACTER
-        elif str_type == "memory":
-            return OperandType.MEMORY_ADDRESS
+        match str_type:
+            case "integer":
+                return OperandType.INTEGER
+            case "boolean":
+                return OperandType.BOOLEAN
+            case "character":
+                return OperandType.CHARACTER
+            case "memory":
+                return OperandType.MEMORY_ADDRESS
 
