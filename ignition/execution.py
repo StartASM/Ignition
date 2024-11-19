@@ -337,12 +337,24 @@ class ExecutionEngine:
         pass
 
     def _execute_push(self, operands):
-        self.runtime.increment_program_counter()
-        pass
+        source_reg = operands[0].value
+        source_val_type = self.runtime.get_register(source_reg)
+        if source_val_type is None:
+            print(f"Runtime Error: Source register {source_reg} is not initialized.")
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            self.runtime.push_stack(source_val_type[0], source_val_type[1])
+            self.runtime.increment_program_counter()
 
     def _execute_pop(self, operands):
-        self.runtime.increment_program_counter()
-        pass
+        dest_reg = operands[0].value
+        stack_top = self.runtime.pop_stack
+        if stack_top is None:
+            print(f"Runtime Error: Empty stack referenced.")
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            self.runtime.set_register(dest_reg, stack_top[0], stack_top[1])
+            self.runtime.increment_program_counter()
 
     def _execute_return(self, operands):
         self.runtime.increment_program_counter()

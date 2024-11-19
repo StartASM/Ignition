@@ -18,9 +18,14 @@ class Runtime:
 
     # REGISTER OPERATIONS
     def set_register(self, reg, val, type):
-        self.registers[int(reg[1])] = [val,type]
+        if reg == 'sp':
+            self.s_pointer = val
+        else:
+            self.registers[int(reg[1])] = [val,type]
     def get_register(self, reg):
-        if self.registers[int(reg[1])][0] is None:
+        if reg == 'sp':
+            return self.s_pointer
+        elif self.registers[int(reg[1])][0] is None:
             return None
         else:
             return self.registers[int(reg[1])]
