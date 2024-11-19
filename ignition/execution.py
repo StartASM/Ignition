@@ -1,3 +1,5 @@
+from jinja2.nodes import Operand
+
 from ignition.ast import InstructionType, OperandType
 INT32_MIN = -2_147_483_648
 INT32_MAX = 2_147_483_647
@@ -322,9 +324,9 @@ class ExecutionEngine:
                 self.runtime.set_program_counter(destination)
             case "less" if s_flag != o_flag:
                 self.runtime.set_program_counter(destination)
-            case "equal"|"zero" if z_flag:
+            case "equal" | "zero" if z_flag:
                 self.runtime.set_program_counter(destination)
-            case "unequal"|"nonzero" if not z_flag:
+            case "unequal" | "nonzero" if not z_flag:
                 self.runtime.set_program_counter(destination)
             case "negative" if s_flag:
                 self.runtime.set_program_counter(destination)
@@ -336,8 +338,10 @@ class ExecutionEngine:
                 self.runtime.increment_program_counter()
 
     def _execute_call(self, operands):
-        self.runtime.increment_program_counter()
-        pass
+        destination = int(operands[1].value[2:len(operands[1].value) - 1])
+        curr_line = self.runtime.get_program_counter()
+        self.runtime.push_stack(curr_line+1, OperandType.INSTRUCTION_ADDRESS)
+        self.runtime.set_program_counter(destination)
 
     def _execute_push(self, operands):
         source_reg = operands[0].value
@@ -360,8 +364,15 @@ class ExecutionEngine:
             self.runtime.increment_program_counter()
 
     def _execute_return(self, operands):
-        self.runtime.increment_program_counter()
-        pass
+        dest_line = self.runtime.pop_stack()
+        if dest_line is None:
+            print(f"Runtime Error: Empty stack referenced when trying to return.")
+            self.runtime.set_program_counter(self._prog_len)
+        elif dest_line[1] != OperandType.INSTRUCTION_ADDRESS:
+            print(f"Runtime Error: Attempted to return from non-instruction address '{self._convert_output(dest_line[0])}'")
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            self.runtime.set_program_counter(dest_line[0])
 
     def _execute_stop(self, operands):
         self.runtime.set_program_counter(self._prog_len)
