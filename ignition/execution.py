@@ -115,8 +115,33 @@ class ExecutionEngine:
         self.runtime.increment_program_counter()
 
     def _execute_cast(self, operands):
-        self.runtime.increment_program_counter()
-        pass
+        type = operands[0].value
+        target_reg = operands[1].value
+        type_val = self.runtime.get_memory(target_reg)
+        if type_val is None:
+            print(f"Runtime Error: Target register {target_reg} is uninitialized.")
+            self.runtime.set_program_counter(self._prog_len)
+        else:
+            if type_val[1] == OperandType.BOOLEAN:
+                match type_val[0]:
+                    case True:
+                        type_val[0] = 1
+                    case _:
+                        type_val[0] = 0
+            match type:
+                case "integer":
+                    self.runtime.set_register(target_reg, type_val[0], OperandType.INTEGER)
+                case "memory":
+                    self.runtime.set_register(target_reg, type_val[0], OperandType.MEMORY_ADDRESS)
+                case "boolean":
+                    if type_val[0] % 2 == 1:
+                        self.runtime.set_register(target_reg, True, OperandType.MEMORY_ADDRESS)
+                    else:
+                        self.runtime.set_register(target_reg, False, OperandType.MEMORY_ADDRESS)
+                case "character":
+                    type_val[0] %= 128
+                    self.runtime.set_register(target_reg, type_val[0], OperandType.CHARACTER)
+            self.runtime.increment_program_counter()
 
     def _execute_add(self, operands):
         permitted_types = [OperandType.INTEGER, OperandType.MEMORY_ADDRESS, OperandType.BOOLEAN, OperandType.CHARACTER]
@@ -393,7 +418,7 @@ class ExecutionEngine:
                 if len(user_input) > 1:
                     print(f"Input Error: Excess input {user_input} for type char.")
                 elif ord(user_input) > 127:
-                    print(f"Input Error: Input {user_input} out of extended ASCII range.")
+                    print(f"Input Error: Input {user_input} out of ASCII range.")
                 else:
                     self.runtime.set_register(input_dest, ord(user_input), input_type)
                     self.runtime.increment_program_counter()
@@ -434,7 +459,7 @@ class ExecutionEngine:
     # HELPER FUNCTIONS
     def _handle_overflow(self, result, type):
         if type == OperandType.CHARACTER:
-            wrapped_result = result % 256
+            wrapped_result = result % 128
         else:
             wrapped_result = (result + 2 ** 31) % 2 ** 32 - 2 ** 31
             if result < INT32_MIN or result > INT32_MAX:
