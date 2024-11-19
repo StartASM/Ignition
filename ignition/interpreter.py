@@ -101,10 +101,10 @@ class Interpreter:
                     elif key == "sp":
                         val_0, val_1 = value.strip("()").split("(")
                         verbose_output.append(f"Stack Pointer -> Value: {val_0}, Type: {val_1}")
-                    elif key == "mem_size":
-                        verbose_output.append(f"Memory Size -> {value[:(len(value)-1)]} Bytes")
-                    elif key == "stack_size":
-                        verbose_output.append(f"Stack Size (Bytes) -> {value[:(len(value)-1)]} Bytes")
+                    elif key == "mem":
+                        verbose_output.append(f"Memory In Use -> {value[:(len(value)-1)]} Bytes")
+                    elif key == "stack":
+                        verbose_output.append(f"Stack Size -> {value[:(len(value)-1)]} Bytes")
                 return "\n".join(verbose_output)
 
         if dump_reg:
