@@ -11,7 +11,6 @@ CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.json")
 DEFAULT_STATE = {
     "initialized": False,
     "last_operation": None,
-    "finished_last": False,
     "current_file": None,
     "silent_flags": {
         "silentc": False,
@@ -51,7 +50,7 @@ def process_command(state, args, interpreter):
     if operation == "initialize":
         if state["initialized"]:
             if not state["silent_flags"]["silenti"]:
-                print(f"Usage Error: Cannot initialize '{args.file}' as '{state['current_file']}' is already initialized. Run 'terminate' first to stop execution of the current program.")
+                print(f"Usage Error: Cannot initialize '{args.file}'. '{state['current_file']}' is already initialized. Run 'terminate' first to stop execution of the current program.")
             return state
 
         if not args.file:
@@ -64,7 +63,6 @@ def process_command(state, args, interpreter):
             state.update({
                 "initialized": True,
                 "last_operation": "initialize",
-                "finished_last": False,
                 "current_file": args.file,
             })
         else:
@@ -74,7 +72,6 @@ def process_command(state, args, interpreter):
             state.update({  # Update the state to reflect termination
                 "initialized": False,
                 "last_operation": "terminate",
-                "finished_last": False,
                 "current_file": None,
             })
 
@@ -88,54 +85,42 @@ def process_command(state, args, interpreter):
         # Reset the state to allow further operations
         state.update({
             "last_operation": "restart",
-            "finished_last": False,  # Reset finished state lock
         })
 
-    elif operation in ["forward", "finish", "dump"]:
+    elif operation in ["forward", "run", "dump"]:
         if not state["initialized"]:
             if not state["silent_flags"]["silenti"]:
-                print(f"Usage Error: Cannot run '{operation}' without initializing a .sasm program first.")
+                print(f"Usage Error: Cannot run. No .sasm program is initialized.")
             return state
 
         if operation == "forward":
-            if state["finished_last"]:
-                if not state["silent_flags"]["silenti"]:
-                    print(f"Usage Error: '{state['current_file']}' is at end of execution. Run 'terminate' or 'restart' first to reset the program.")
-                return state
             num_steps = args.steps or 1  # Default to 1 if no steps are provided
             state["last_operation"] = "forward"
             try:
                 interpreter.forward(num_steps)
             except:
                 if not state["silent_flags"]["silenti"]:
-                    print("Python Error. Unexpected runtime exception encountered. Running 'end'.")
+                    print("Python Error. Unexpected runtime exception encountered. Running 'terminate'.")
                 state.update({
                     "initialized": False,
                     "last_operation": "terminate",
-                    "finished_last": False,
                     "current_file": None,
                 })
                 interpreter.terminate()
                 save_state(state)
 
-        elif operation == "finish":
-            if state["finished_last"]:
-                if not state["silent_flags"]["silenti"]:
-                    print(f"Usage Error: '{state['current_file']}' is already at the end of execution. Run 'restart' to execute again.")
-                return state
+        elif operation == "run":
             state.update({
-                "last_operation": "finish",
-                "finished_last": True,  # Mark program as finished
+                "last_operation": "run",
             })
             try:
                 interpreter.finish()
             except:
                 if not state["silent_flags"]["silenti"]:
-                    print("Python Error. Unexpected runtime exception encountered. Running 'end'.")
+                    print("Python Error. Unexpected runtime exception encountered. Running 'terminate'.")
                 state.update({
                     "initialized": False,
                     "last_operation": "terminate",
-                    "finished_last": False,
                     "current_file": None,
                 })
                 interpreter.terminate()
@@ -157,10 +142,26 @@ def process_command(state, args, interpreter):
         state.update({
             "initialized": False,
             "last_operation": "terminate",
-            "finished_last": False,
             "current_file": None,
         })
         interpreter.terminate()
+
+    elif operation == "breakpoint":
+        if not state["initialized"]:
+            if not state["silent_flags"]["silenti"]:
+                print("Usage Error: Cannot manage breakpoints. No .sasm program has been initialized.")
+            return state
+        if args.set is not None:
+            line_num = args.set
+            interpreter.set_breakpoint(line_num)  # Set a breakpoint at the specified line
+        elif args.remove is not None:
+            line_num = args.remove
+            interpreter.remove_breakpoint(line_num)  # Remove the breakpoint at the specified line
+        elif args.list:
+            interpreter.list_breakpoints()  # List all breakpoints
+        else:
+            if not state["silent_flags"]["silenti"]:
+                print("Usage Error: You must specify either --set, --remove, or --list.")
 
     elif operation == "end":
         if state["initialized"]:
@@ -169,7 +170,6 @@ def process_command(state, args, interpreter):
             state.update({
                 "initialized": False,
                 "last_operation": "terminate",
-                "finished_last": False,
                 "current_file": None,
             })
             interpreter.terminate()
@@ -177,6 +177,7 @@ def process_command(state, args, interpreter):
         exit(0)
 
     return state
+
 
 def main():
     # Get Docker image (ensures it exists)
@@ -189,10 +190,10 @@ def main():
         choices=["start"],
         help="Command to start the interpreter loop."
     )
-    parser.add_argument("--silentc", action="store_true", help="Suppress StartASM Compiler errors.")
-    parser.add_argument("--silenti", action="store_true", help="Suppress Ignition usage errors.")
-    parser.add_argument("--silentr", action="store_true", help="Suppress StartASM runtime errors.")
-    parser.add_argument("--truesilent", action="store_true", help="Suppress all output, including errors")
+    parser.add_argument("--silentc", action="store_true", help="suppress StartASM Compiler errors.")
+    parser.add_argument("--silenti", action="store_true", help="suppress Ignition usage errors.")
+    parser.add_argument("--silentr", action="store_true", help="suppress StartASM runtime errors.")
+    parser.add_argument("--truesilent", action="store_true", help="suppress all output, including errors")
     args = parser.parse_args()
 
     # Ensure the user provided the 'start' command
@@ -222,17 +223,20 @@ def main():
         parser = argparse.ArgumentParser(description="Enter a command for the interpreter.")
         parser.add_argument(
             "operation",
-            choices=["initialize", "restart", "forward", "finish", "terminate", "dump", "end"],
+            choices=["initialize", "restart", "forward", "run", "terminate", "dump", "breakpoint", "end"],
             help="The interpreter operation to perform."
         )
-        parser.add_argument("-r", action="store_true", help="Dump registers to console.")
-        parser.add_argument("-m", action="store_true", help="Dump memory to console.")
-        parser.add_argument("-s", action="store_true", help="Dump stack to console.")
-        parser.add_argument("-f", action="store_true", help="Dump flags to console.")
-        parser.add_argument("-p", action="store_true", help="Dump program data to console.")
-        parser.add_argument("--verbose", action="store_true", help="Provide verbose output for dump command.")  # Add verbose flag
-        parser.add_argument("--file", type=str, help="Path to the .sasm program file (used with 'initialize').")
-        parser.add_argument("--steps", type=int, help="Number of steps to move forward (used with 'forward').")  # Add steps argument
+        parser.add_argument("-r", action="store_true", help="dump registers to console.")
+        parser.add_argument("-m", action="store_true", help="dump memory to console.")
+        parser.add_argument("-s", action="store_true", help="dump stack to console.")
+        parser.add_argument("-f", action="store_true", help="dump flags to console.")
+        parser.add_argument("-p", action="store_true", help="dump program data to console.")
+        parser.add_argument("--verbose", action="store_true", help="provide verbose output (used with 'dump') ")  # Add verbose flag
+        parser.add_argument("--file", type=str, help="path to the .sasm program file (used with 'initialize').")
+        parser.add_argument("--steps", type=int, help="number of steps to move forward (used with 'forward').")  # Add steps argument
+        parser.add_argument("--set", type=int, help="set a breakpoint at the specified line number (used with 'breakpoint').")
+        parser.add_argument("--remove", type=int, help="remove the breakpoint at the specified line number (used with 'breakpoint').")
+        parser.add_argument("--list", action="store_true", help="list all active breakpoints (used with 'breakpoint').")
 
         # Prompt user for input
         user_input = input("> ").strip().split()

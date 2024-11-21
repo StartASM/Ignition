@@ -1,6 +1,5 @@
 from ignition.parser import Parser
 from ignition.runtime import Runtime
-from ignition.ast import AbstractSyntaxTree
 from ignition.execution import ExecutionEngine
 
 class Interpreter:
@@ -26,7 +25,7 @@ class Interpreter:
             self._initialized = True # Whether the interpreter has been initialized (singleton)
             self._EOF = False # Whether at EOF
             self._prog_len = 0 # Length of current program
-            self._breakpoint = None
+            self._breakpoints = []
 
     # PUBLIC METHODS
     def initialize(self, program):
@@ -47,17 +46,17 @@ class Interpreter:
                 "Usage Error: 'examples/SimpleCode.sasm' is already at the end of execution. Run 'restart' to execute again.")
         else:
             curr_line = self.runtime.get_program_counter()
-            while steps and (self._breakpoint is None or self._breakpoint != curr_line):
+            while steps and (len(self._breakpoints) == 0 or curr_line not in self._breakpoints):
                 self._execute_step()
                 steps -= 1
                 curr_line = self.runtime.get_program_counter()
 
     def finish(self):
         if self._EOF and not self.silent_i:
-            print("Usage Error: 'examples/SimpleCode.sasm' is already at the end of execution. Run 'restart' to execute again.")
+            print("Usage Error: Program is already at the end of execution. Run 'restart' to execute again.")
         else:
             curr_line = self.runtime.get_program_counter()
-            while not self._EOF and (self._breakpoint is None or self._breakpoint != curr_line):
+            while len(self._breakpoints) == 0 or curr_line not in self._breakpoints:
                 self._execute_step()
                 curr_line = self.runtime.get_program_counter()
 
@@ -173,6 +172,30 @@ class Interpreter:
         self._EOF = False
         self.runtime = Runtime()
         self.execution_engine = ExecutionEngine(self.runtime, self._prog_len, self.silent_r, self.silent_o)
+
+    def set_breakpoint(self, line):
+        if line in self._breakpoints and not self.silent_i:
+            print(f"Usage Error: Breakpoint at line {line} already exists.")
+        self._breakpoints.append(line)
+
+    def remove_breakpoint(self, line):
+        if line not in self._breakpoints and not self.silent_i:
+            print(f"Usage Error: Breakpoint at line {line} does not exist.")
+        else:
+            self._breakpoints.remove(line)
+
+    def list_breakpoints(self):
+        self._breakpoints.sort()
+        curr = 1
+        print("===Breakpoints===")
+        if len(self._breakpoints) == 0:
+            print("No breakpoints set")
+        else:
+            for line in self._breakpoints:
+                print(f"Breakpoint {curr}: {line}")
+                curr +=1
+        print("=================")
+
 
     # PRIVATE METHODS
     def _execute_step(self):
