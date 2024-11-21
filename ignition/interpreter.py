@@ -114,8 +114,7 @@ class Interpreter:
                         if key == "pc":
                             verbose_output.append(f"Program Counter -> Line: {value}")
                         elif key == "sp":
-                            val_0, val_1 = value.strip("()").split("(")
-                            verbose_output.append(f"Stack Pointer -> Value: {val_0}, Type: {val_1}")
+                            verbose_output.append(f"Stack Pointer -> {value}")
                         elif key == "mem":
                             verbose_output.append(f"Memory In Use -> {value[:(len(value)-1)]} Bytes")
                         elif key == "stack":

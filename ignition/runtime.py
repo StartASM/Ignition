@@ -1,4 +1,6 @@
 from ignition.ast import OperandType
+INT32_MIN = -2_147_483_648
+INT32_MAX = 2_147_483_647
 
 class Runtime:
     def __init__(self):
@@ -6,10 +8,8 @@ class Runtime:
         self.registers = [[None,None],[None, None],[None, None],[None, None],[None, None],[None, None],[None, None],[None, None],[None, None],[None, None]]
         # Memory
         self.memory = {}
-        # Stack
-        self.stack = []
         # Counters and pointers
-        self.s_pointer = [None,None]  # Stack Pointer
+        self.s_pointer = INT32_MAX+1  # Stack Pointer
         self.p_counter = 0  # Program Counter
         # Flags (State, Iteration)
         self.z_flag = False  # Zero Flag
@@ -18,13 +18,10 @@ class Runtime:
 
     # REGISTER OPERATIONS
     def set_register(self, reg, val, type):
-        if reg == 'sp':
-            self.s_pointer = val
-        else:
-            self.registers[int(reg[1])] = [val,type]
+        self.registers[int(reg[1])] = [val,type]
     def get_register(self, reg):
         if reg == 'sp':
-            return self.s_pointer
+            return [self.s_pointer, OperandType.MEMORY_ADDRESS]
         elif self.registers[int(reg[1])][0] is None:
             return None
         else:
@@ -43,16 +40,11 @@ class Runtime:
 
     # STACK OPERATIONS
     def push_stack(self, val, type):
-        self.stack.append([val, type])
-        self.s_pointer = self.stack[-1]
+        self.memory[self.s_pointer-1] = [val, type]
+        self.s_pointer -=1
     def pop_stack(self):
-        if self.stack:
-            ret = self.stack[-1]
-            self.stack.pop()
-            self.s_pointer = self.stack[-1]
-            return ret
-        else:
-            return None
+        self.s_pointer += 1
+        return self.memory[self.s_pointer-1]
     def get_stack_pointer(self):
         return self.s_pointer
 
@@ -88,10 +80,10 @@ class Runtime:
         reg_output = " ".join(f"r{i}:{val[0]}({val[1]})" if val[0] is not None else f"r{i}:None(None)" for i, val in enumerate(self.registers))
         return reg_output
     def dump_memory(self):
-        mem_output = " ".join(f"{addr}:{val[0]}({val[1]})" for addr, val in sorted(self.memory.items()))
+        mem_output = " ".join(f"{addr}:{val[0]}({val[1]})"for addr, val in sorted(self.memory.items())if addr < self.s_pointer)
         return mem_output
     def dump_stack(self):
-        stack_output = " ".join(f"{val[0]}({val[1]})" for val in self.stack)
+        stack_output = " ".join(f"{val[0]}({val[1]})"for addr, val in sorted(self.memory.items(), key=lambda item: item[0], reverse=True)if addr >= self.s_pointer)
         return stack_output
     def dump_flags(self):
         flag_output = f"zf:{int(self.z_flag)} "
@@ -100,9 +92,12 @@ class Runtime:
         return flag_output
     def dump_program_state(self):
         prog_state = f"pc:{self.p_counter} "
-        prog_state += f"sp:{self.s_pointer[0]}({self.s_pointer[1]}) "
+        if self.s_pointer > INT32_MAX:
+            prog_state += f"sp:None "
+        else:
+            prog_state += f"sp:m<{self.s_pointer}> "
         prog_state += f"mem:{len(self.memory)*4}B "
-        prog_state += f"stack:{len(self.stack)*4}B"
+        prog_state += f"stack:{(INT32_MAX-self.s_pointer+1)*4}B"
         return prog_state
 
 
