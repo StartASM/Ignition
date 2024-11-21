@@ -8,8 +8,8 @@ class Parser:
     def __init__(self):
         self.json_output = None
 
-    def parse_program(self, program_path, compiler_image) -> AbstractSyntaxTree:
-        self._call_compiler(program_path, compiler_image)
+    def parse_program(self, program_path, compiler_image, silent_c) -> AbstractSyntaxTree:
+        self._call_compiler(program_path, compiler_image, silent_c)
         ast = AbstractSyntaxTree()
         if self.json_output is None:
             return None
@@ -17,7 +17,7 @@ class Parser:
         ast.set_root(root_node)
         return ast
 
-    def _call_compiler(self, program_path, compiler_image):
+    def _call_compiler(self, program_path, compiler_image, silent_c):
         compiler_command = ["docker", "run", "--rm", compiler_image, "ast", program_path]
         try:
             result = subprocess.run(
@@ -26,13 +26,14 @@ class Parser:
                 capture_output=True,
                 check=False
             )
-            if result.returncode != 0:
-                print(f"COMPILER ERROR(S) ENCOUNTERED:\n{result.stderr.strip()}")
+            if result.returncode != 0 and not silent_c:
+                print(f"Compiler Error: Syntax issues encountered during compilation:\n{result.stderr.strip()}")
                 self.json_output = None
             else:
                 self.json_output = json.loads(result.stdout)
         except Exception as e:
-            print(f"Failed to call compiler image: {str(e)}")
+            if not silent_c:
+                print(f"Compiler Error: Failed to call compiler image {str(e)}")
             self.json_output = None
 
     def _build_ast(self, json_node) -> RootNode:
