@@ -104,7 +104,18 @@ def process_command(state, args, silent_flags, interpreter):
                 return state
             num_steps = args.steps or 1  # Default to 1 if no steps are provided
             state["last_operation"] = "forward"
-            interpreter.forward(num_steps)
+            try:
+                interpreter.forward(num_steps)
+            except:
+                print("Unexpected Python Runtime Error Encountered. Running 'end'.")
+                state.update({
+                    "initialized": False,
+                    "last_operation": "terminate",
+                    "finished_last": False,
+                    "current_file": None,
+                })
+                interpreter.terminate()
+                save_state(state)
 
         elif operation == "finish":
             if state["finished_last"]:
@@ -115,7 +126,18 @@ def process_command(state, args, silent_flags, interpreter):
                 "last_operation": "finish",
                 "finished_last": True,  # Mark program as finished
             })
-            interpreter.finish()
+            try:
+                interpreter.finish()
+            except:
+                print("Unexpected Python Runtime Error Encountered. Running 'end'.")
+                state.update({
+                    "initialized": False,
+                    "last_operation": "terminate",
+                    "finished_last": False,
+                    "current_file": None,
+                })
+                interpreter.terminate()
+                save_state(state)
 
         elif operation == "dump":
             if not any([args.r, args.m, args.s, args.f, args.p]):

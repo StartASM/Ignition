@@ -85,7 +85,7 @@ class Runtime:
 
     # DUMP OPERATIONS
     def dump_registers(self):
-        reg_output = " ".join(f"r{i}:{val[0]}({val[1]})" if val[0] is not None else f"r{i}:None" for i, val in enumerate(self.registers))
+        reg_output = " ".join(f"r{i}:{val[0]}({val[1]})" if val[0] is not None else f"r{i}:None(None)" for i, val in enumerate(self.registers))
         return reg_output
     def dump_memory(self):
         mem_output = " ".join(f"{addr}:{val[0]}({val[1]})" for addr, val in sorted(self.memory.items()))
