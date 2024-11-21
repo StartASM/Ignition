@@ -5,7 +5,7 @@ INT32_MAX = 2_147_483_647
 class Runtime:
     def __init__(self):
         # Registers (Val, Type)
-        self.registers = [[None,None],[None, None],[None, None],[None, None],[None, None],[None, None],[None, None],[None, None],[None, None],[None, None]]
+        self.registers = [[None, None], [None, None], [None, None], [None, None], [None, None], [None, None], [None, None], [None, None], [None, None], [None, None]]
         # Memory
         self.memory = {}
         # Counters and pointers
