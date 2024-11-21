@@ -46,7 +46,11 @@ class Interpreter:
                 "Usage Error: 'examples/SimpleCode.sasm' is already at the end of execution. Run 'restart' to execute again.")
         else:
             curr_line = self.runtime.get_program_counter()
-            while steps and (len(self._breakpoints) == 0 or curr_line not in self._breakpoints):
+            if curr_line in self._breakpoints:
+                self._execute_step()
+                steps -=1
+                curr_line = self.runtime.get_program_counter()
+            while curr_line not in self._breakpoints and steps and not self._EOF:
                 self._execute_step()
                 steps -= 1
                 curr_line = self.runtime.get_program_counter()
@@ -56,7 +60,10 @@ class Interpreter:
             print("Usage Error: Program is already at the end of execution. Run 'restart' to execute again.")
         else:
             curr_line = self.runtime.get_program_counter()
-            while len(self._breakpoints) == 0 or curr_line not in self._breakpoints:
+            if curr_line in self._breakpoints:
+                self._execute_step()
+                curr_line = self.runtime.get_program_counter()
+            while curr_line not in self._breakpoints and not self._EOF:
                 self._execute_step()
                 curr_line = self.runtime.get_program_counter()
 
